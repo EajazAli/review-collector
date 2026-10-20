@@ -1,0 +1,16 @@
+[
+  {
+    "id": "demo0001",
+    "slug": "demo-cafe",
+    "name": "Demo Café",
+    "tagline": "Do let us know your thoughts. Your feedback matters!",
+    "logo": "",
+    "theme": { "preset": "sunset", "label": "Sunset", "from": "#FFB23F", "to": "#F2581E", "ink": "#FFFFFF", "face": "#1E1A17" },
+    "threshold": 4,
+    "googleReviewUrl": "",
+    "whatsapp": ["+966504920373", ""],
+    "webhookUrl": "",
+    "social": { "instagram": "democafe", "tiktok": "", "snapchat": "", "facebook": "", "x": "", "website": "" },
+    "createdAt": "2026-10-20T00:00:00.000Z"
+  }
+]

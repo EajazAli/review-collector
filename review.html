@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#F2581E" />
+  <title>Rate your visit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/review.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
+
+  <!-- Rate screen -->
+  <main class="screen" id="rate" hidden>
+    <header class="top">
+      <div class="brand">
+        <div class="logo" id="logo"></div>
+        <span class="biz-name" id="bizName"></span>
+      </div>
+      <button class="skip" id="skip" type="button">Skip</button>
+    </header>
+
+    <section class="intro">
+      <h1>Please rate your<br />experience</h1>
+      <p id="tagline"></p>
+    </section>
+
+    <section class="face-wrap">
+      <svg class="face" id="face" viewBox="0 0 200 150" aria-hidden="true">
+        <g class="brows">
+          <path id="browL" d="M44 30 L80 40" />
+          <path id="browR" d="M156 30 L120 40" />
+        </g>
+        <ellipse class="eye" id="eyeL" cx="62" cy="58" rx="13" ry="13" />
+        <ellipse class="eye" id="eyeR" cx="138" cy="58" rx="13" ry="13" />
+        <circle class="cheek" id="cheekL" cx="40" cy="92" r="11" />
+        <circle class="cheek" id="cheekR" cx="160" cy="92" r="11" />
+        <path class="mouth" id="mouth" d="M72 110 Q100 108 128 104" />
+      </svg>
+      <p class="mood" id="mood" aria-live="polite">Tap a dot to rate</p>
+    </section>
+
+    <div class="rating" id="rating" role="radiogroup" aria-label="Rating out of 5"></div>
+
+    <form class="details" id="details" hidden>
+      <label class="field">
+        <span class="label" id="textLabel">Tell us more</span>
+        <textarea id="text" rows="4" maxlength="1500"></textarea>
+      </label>
+
+      <div class="private" id="privateFields" hidden>
+        <div class="photos">
+          <label class="attach">
+            <input id="photos" type="file" accept="image/*" multiple />
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-2h6l2 2h3v12H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+            <span>Add photos</span>
+          </label>
+          <div class="thumbs" id="thumbs"></div>
+        </div>
+        <div class="row">
+          <label class="field"><span class="label">Name (optional)</span><input id="guestName" autocomplete="name" /></label>
+          <label class="field"><span class="label">WhatsApp / phone (optional)</span><input id="guestPhone" type="tel" autocomplete="tel" inputmode="tel" /></label>
+        </div>
+        <p class="hint">Only the owner sees this. They can reach out and make it right.</p>
+      </div>
+    </form>
+
+    <div class="cta-wrap">
+      <button class="cta" id="cta" type="button" disabled>Submit</button>
+    </div>
+  </main>
+
+  <!-- Done screen -->
+  <main class="screen done" id="done" hidden>
+    <div class="done-inner">
+      <div class="badge" id="doneBadge">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+      </div>
+      <h1 id="doneTitle">Thank you!</h1>
+      <p id="doneText"></p>
+      <a class="cta solid wa" id="waRetry" href="#" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.3-.5 0-1 .2-3.3-.7-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>
+        Send to the owner on WhatsApp
+      </a>
+      <div class="socials" id="socials"></div>
+      <button class="ghost" id="again" type="button">Back</button>
+    </div>
+  </main>
+
+  <!-- Not found -->
+  <main class="screen done" id="missing" hidden>
+    <div class="done-inner">
+      <h1>Page not found</h1>
+      <p>This review link isn't active. Please ask the staff for a new QR code.</p>
+    </div>
+  </main>
+
+  <!-- Google hand-off sheet -->
+  <div class="sheet-backdrop" id="sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="grab"></div>
+      <div class="g-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+      </div>
+      <h2 id="sheetTitle">Almost there!</h2>
+      <ol class="steps">
+        <li id="stepCopy"><b>Your review is copied.</b></li>
+        <li>On Google, tap <b id="sheetStars">5 stars</b>.</li>
+        <li>Long-press the text box and tap <b>Paste</b>.</li>
+      </ol>
+      <a class="cta solid" id="toGoogle" href="#" target="_blank" rel="noopener">Continue to Google</a>
+      <button class="link" id="sheetClose" type="button">Not now</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="assets/store.js"></script>
+  <script src="assets/review.js"></script>
+</body>
+</html>

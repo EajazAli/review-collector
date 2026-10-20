@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Review Collector Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/admin.css" />
+</head>
+<body>
+  <aside class="nav">
+    <div class="brand"><span class="mark">★</span><span>Review<b>Collector</b></span></div>
+    <nav>
+      <button class="tab active" data-view="businesses"><svg viewBox="0 0 24 24"><path d="M3 10l2-6h14l2 6M4 10v10h16V10M3 10h18M9 20v-5h6v5"/></svg>Businesses</button>
+      <button class="tab" data-view="inbox"><svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5"/></svg>Feedback inbox<span class="pill" id="inboxCount" hidden></span></button>
+      <button class="tab" data-view="publish"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M4 15v5h16v-5"/></svg>Publish</button>
+    </nav>
+    <p class="nav-foot">Static site · GitHub Pages / Netlify</p>
+  </aside>
+
+  <main class="main">
+    <!-- BUSINESSES -->
+    <section class="view" id="view-businesses">
+      <header class="page-head">
+        <div><h1>Businesses</h1><p class="muted">Create a review page and QR code for each business.</p></div>
+        <button class="btn primary" id="addBiz"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New business</button>
+      </header>
+
+      <div class="biz-strip" id="bizList"></div>
+
+      <div class="workspace" id="workspace" hidden>
+        <form class="editor" id="editor" autocomplete="off">
+          <div class="card">
+            <h2>Basics</h2>
+            <div class="logo-row">
+              <label class="logo-drop" id="logoDrop" tabindex="0">
+                <input type="file" id="logoInput" accept="image/*" />
+                <img id="logoImg" alt="" hidden />
+                <span id="logoPh">Upload<br />logo</span>
+              </label>
+              <div class="grow grid2">
+                <label class="f"><span>Business name</span><input name="bizName" required placeholder="e.g. Al Ameen Restaurant" /></label>
+                <label class="f"><span>Page link</span><div class="prefix"><em>?b=</em><input name="slug" required pattern="[a-z0-9\-]+" placeholder="al-ameen" /></div></label>
+                <label class="f span2"><span>Subtitle on review page</span><input name="tagline" placeholder="Your feedback matters!" /></label>
+              </div>
+            </div>
+            <button type="button" class="link small" id="logoRemove" hidden>Remove logo</button>
+          </div>
+
+          <div class="card">
+            <h2>Review threshold</h2>
+            <p class="muted">Ratings at or above the threshold are sent to Google. Lower ratings go privately to the owner, so they get a second chance.</p>
+            <div class="seg" id="threshold" role="radiogroup" aria-label="Threshold"></div>
+            <div class="split" id="splitBar"></div>
+          </div>
+
+          <div class="card">
+            <h2>Theme</h2>
+            <div class="swatches" id="swatches"></div>
+            <div class="grid4">
+              <label class="f color"><span>Top colour</span><input type="color" name="from" /></label>
+              <label class="f color"><span>Bottom colour</span><input type="color" name="to" /></label>
+              <label class="f color"><span>Text</span><input type="color" name="ink" /></label>
+              <label class="f color"><span>Face</span><input type="color" name="face" /></label>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Google review link</h2>
+            <label class="f"><span>Google "write a review" link or Place ID</span>
+              <div class="inline"><input name="googleReviewUrl" placeholder="https://g.page/r/XXXX/review" /><button type="button" class="btn" id="testGoogle">Test</button></div>
+            </label>
+            <p class="muted small">In Google Business Profile, open <b>Ask for reviews</b> and copy the link. A Place ID (starts with <code>ChIJ</code>) also works.</p>
+          </div>
+
+          <div class="card">
+            <h2>Private feedback delivery</h2>
+            <p class="muted small">Low ratings, with photos, go to these WhatsApp numbers and to your inbox.</p>
+            <div class="grid2">
+              <label class="f"><span>WhatsApp contact 1</span><input name="wa0" type="tel" placeholder="+966 5X XXX XXXX" /></label>
+              <label class="f"><span>WhatsApp contact 2 (optional)</span><input name="wa1" type="tel" placeholder="+966 5X XXX XXXX" /></label>
+              <label class="f span2"><span>Webhook URL (Make, Zapier or Netlify Function)</span><input name="webhookUrl" type="url" placeholder="https://hook.eu2.make.com/…" /></label>
+            </div>
+            <p class="note" id="deliveryNote"></p>
+          </div>
+
+          <div class="card">
+            <h2>Social media</h2>
+            <p class="muted small">Shown on the thank-you screen. Use a handle (@name) or a full link.</p>
+            <div class="grid2" id="socialFields"></div>
+          </div>
+
+          <div class="savebar">
+            <button type="button" class="btn danger ghost" id="deleteBiz">Delete</button>
+            <span class="status" id="saveStatus"></span>
+            <button type="submit" class="btn primary">Save changes</button>
+          </div>
+        </form>
+
+        <aside class="side">
+          <div class="card phone-card">
+            <div class="card-head"><h2>Live preview</h2><a class="link small" id="openPage" target="_blank" rel="noopener">Open page ↗</a></div>
+            <div class="phone"><div class="notch"></div><iframe id="preview" title="Review page preview"></iframe></div>
+          </div>
+
+          <div class="card qr-card" id="qrCard">
+            <h2>QR code</h2>
+            <div class="table-card" id="tableCard">
+              <div class="tc-head" id="tcHead"></div>
+              <div id="qr" class="qr"></div>
+              <p class="tc-cta">Scan to rate your visit</p>
+            </div>
+            <div class="url-row"><input id="pageUrl" readonly /><button type="button" class="btn" id="copyUrl">Copy</button></div>
+            <div class="btn-row">
+              <button type="button" class="btn" id="dlPng">PNG</button>
+              <button type="button" class="btn" id="dlSvg">SVG</button>
+              <button type="button" class="btn" id="printCard">Print table card</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="empty" id="emptyState" hidden>
+        <div class="empty-art">★</div>
+        <h2>No businesses yet</h2>
+        <p class="muted">Add your first business to get a review page and QR code.</p>
+        <button class="btn primary" id="addBiz2">New business</button>
+      </div>
+    </section>
+
+    <!-- INBOX -->
+    <section class="view" id="view-inbox" hidden>
+      <header class="page-head">
+        <div><h1>Feedback inbox</h1><p class="muted">Low ratings that went to the owner instead of Google.</p></div>
+        <div class="filters">
+          <select id="fBiz"></select>
+          <select id="fRoute"><option value="private">Private only</option><option value="all">All ratings</option></select>
+        </div>
+      </header>
+      <div class="stats" id="stats"></div>
+      <div class="feed" id="feed"></div>
+      <p class="muted small">This inbox shows feedback saved in this browser. Live feedback arrives on WhatsApp through your webhook.</p>
+    </section>
+
+    <!-- PUBLISH -->
+    <section class="view" id="view-publish" hidden>
+      <header class="page-head"><div><h1>Publish</h1><p class="muted">Changes are saved in this browser. Publish them so guests' phones can see them.</p></div></header>
+      <div class="publish">
+        <div class="card step"><span class="num">1</span><div>
+          <h2>Your public site address</h2>
+          <p class="muted small">The address of your GitHub Pages or Netlify site. QR codes point here.</p>
+          <div class="inline"><input id="publicUrl" placeholder="https://yourname.github.io/review-collector/" /><button class="btn" id="savePublic">Save</button></div>
+        </div></div>
+        <div class="card step"><span class="num">2</span><div>
+          <h2>Download businesses.json</h2>
+          <p class="muted small">This contains every business, logo and setting.</p>
+          <button class="btn primary" id="exportJson">Download businesses.json</button>
+        </div></div>
+        <div class="card step"><span class="num">3</span><div>
+          <h2>Upload it to GitHub</h2>
+          <p class="muted small">In your repository, open the <code>data</code> folder → <b>Add file → Upload files</b> → drop in <code>businesses.json</code> → <b>Commit changes</b>. The site updates within about a minute.</p>
+        </div></div>
+        <div class="card"><h2>Backup &amp; restore</h2>
+          <div class="btn-row">
+            <label class="btn">Import JSON<input type="file" id="importJson" accept="application/json" hidden /></label>
+            <button class="btn" id="reloadPublished">Reload from live site</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+  <script src="assets/store.js"></script>
+  <script src="assets/admin.js"></script>
+</body>
+</html>

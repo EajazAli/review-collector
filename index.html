@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Review Collector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --from: #FFB23F; --to: #F2581E; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #fff; background: linear-gradient(160deg, var(--from), var(--to)); background-color: var(--to); }
+    main { max-width: 520px; text-align: center; }
+    h1 { font-size: clamp(30px, 7vw, 44px); margin: 0 0 12px; letter-spacing: -.8px; line-height: 1.1; }
+    p { font-size: 17px; line-height: 1.55; opacity: .92; margin: 0 0 28px; }
+    .row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    a { display: inline-flex; align-items: center; min-height: 52px; padding: 0 26px; border-radius: 999px; border: 2px solid #fff; color: #fff; text-decoration: none; font-weight: 800; }
+    a.solid { background: #fff; color: var(--to); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Happy guests go to Google.<br />Unhappy guests come to you.</h1>
+    <p>Guests scan a QR code and rate their visit. High ratings are sent to Google. Low ratings go privately to the owner on WhatsApp, so the business gets a second chance.</p>
+    <div class="row">
+      <a class="solid" href="admin.html">Open dashboard</a>
+      <a href="review.html?b=demo-cafe">Try the guest page</a>
+    </div>
+  </main>
+</body>
+</html>
