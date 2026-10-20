@@ -264,7 +264,8 @@
   renderDots();
   drawFace(face);
   (async () => {
-    const slug = params.get('b');
+    // Tolerate mangled links like "?b=test/review.html?b=test" from older QR codes.
+    const slug = (params.get('b') || '').split(/[/?#&]/)[0].trim().toLowerCase();
     const b = slug ? await RC.getBusiness(slug, params.has('draft')) : null;
     if (b) { applyBusiness(b); $('rate').hidden = false; }
     else if (!isPreview) $('missing').hidden = false;

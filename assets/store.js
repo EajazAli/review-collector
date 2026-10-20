@@ -80,11 +80,23 @@ const RC = (() => {
   const settings = () => ({ publicUrl: '', ...read(K.settings, {}) });
   const saveSettings = (s) => write(K.settings, s);
 
+  // Reduce any pasted address (e.g. ".../review.html?b=x" or ".../admin.html#publish") to the site folder.
+  function siteBase(raw) {
+    let v = (raw || '').trim();
+    if (!v) v = location.href;
+    if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+    try {
+      const u = new URL(v);
+      let path = u.pathname;
+      const i = path.search(/\/[^/]*\.html?(\/|$)/i); // cut at the first *.html segment
+      if (i !== -1) path = path.slice(0, i);
+      if (!path.endsWith('/')) path += '/';
+      return u.origin + path;
+    } catch { return ''; }
+  }
+
   function reviewUrl(b) {
-    let base = settings().publicUrl.trim();
-    if (!base) base = location.href.replace(/[^/]*([?#].*)?$/, '');
-    if (!base.endsWith('/')) base += '/';
-    return `${base}review.html?b=${encodeURIComponent(b.slug)}`;
+    return `${siteBase(settings().publicUrl)}review.html?b=${encodeURIComponent(b.slug)}`;
   }
 
   // Feedback
@@ -149,7 +161,7 @@ const RC = (() => {
 
   return {
     THEMES, SOCIAL, uid, slugify, newBusiness, fetchPublished, adminList, saveList, getBusiness,
-    googleLink, reviewUrl, settings, saveSettings, listFeedback, addFeedback, updateFeedback,
+    googleLink, siteBase, reviewUrl, settings, saveSettings, listFeedback, addFeedback, updateFeedback,
     deliver, waLink, resizeImage, initials, esc, read, write, K,
   };
 })();

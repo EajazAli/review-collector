@@ -341,8 +341,9 @@
 
   // ---------- Publish ----------
   $('savePublic').addEventListener('click', () => {
-    let v = $('publicUrl').value.trim();
-    if (v && !/^https?:\/\//.test(v)) v = 'https://' + v;
+    const raw = $('publicUrl').value.trim();
+    const v = raw ? RC.siteBase(raw) : '';
+    if (raw && !v) return toast("That doesn't look like a web address");
     RC.saveSettings({ ...RC.settings(), publicUrl: v });
     $('publicUrl').value = v;
     toast('Saved. QR codes now use this address');
