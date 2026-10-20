@@ -10,7 +10,7 @@
 html, body { margin: 0; height: 100%; scrollbar-width: none; }
 body::-webkit-scrollbar { display: none; }
 body {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: Urbanist, Arial, 'Helvetica Neue', -apple-system, 'Segoe UI', sans-serif;
   color: var(--ink);
   background: linear-gradient(165deg, var(--from) 0%, var(--to) 100%) fixed;
   background-color: var(--to);
@@ -184,3 +184,16 @@ textarea:focus, input:focus { border-color: var(--ink); background: color-mix(in
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Review Finder / H&H attribution */
+.powered {
+  display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 14px;
+  font-size: 12px; font-weight: 500; letter-spacing: .2px; opacity: .72;
+}
+.powered a { color: inherit; font-weight: 700; text-decoration: none; }
+.powered .hh {
+  width: 13px; height: 16px; flex: none; background: currentColor;
+  -webkit-mask: url(brand/HH_Icon_White.png) center / contain no-repeat;
+          mask: url(brand/HH_Icon_White.png) center / contain no-repeat;
+}
+.done .powered { position: absolute; left: 0; right: 0; bottom: calc(20px + var(--safe-b)); }

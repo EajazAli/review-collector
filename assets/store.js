@@ -1,4 +1,4 @@
-/* Review Collector — data layer.
+/* Review Finder — data layer.
  * Built for static hosting (GitHub Pages / Netlify):
  *  - Businesses are published in data/businesses.json. The admin edits a working copy in
  *    localStorage and exports a fresh businesses.json to commit to the repo.
@@ -16,6 +16,7 @@ const RC = (() => {
   };
 
   const THEMES = {
+    hh:       { label: 'H&H',      from: '#4C5CF0', to: '#000212', ink: '#FFFFFF', face: '#FFFFFF' },
     sunset:   { label: 'Sunset',   from: '#FFB23F', to: '#F2581E', ink: '#FFFFFF', face: '#1E1A17' },
     berry:    { label: 'Berry',    from: '#FF6FA5', to: '#B4236C', ink: '#FFFFFF', face: '#2A0F1E' },
     ocean:    { label: 'Ocean',    from: '#4FD1E8', to: '#2563EB', ink: '#FFFFFF', face: '#0B1B3A' },

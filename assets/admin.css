@@ -1,31 +1,33 @@
 :root {
-  --bg: #F6F4F1;
+  /* H&H Technology palette */
+  --bg: #F4F5FA;
   --panel: #FFFFFF;
-  --text: #1C1A19;
-  --muted: #6F6A66;
-  --line: #E8E3DE;
-  --accent: #F2581E;
-  --accent-2: #FFB23F;
-  --accent-soft: #FFF0E8;
+  --text: #0B0D1F;
+  --muted: #75758A;
+  --line: #E3E5EF;
+  --accent: #4C5CF0;
+  --accent-2: #6B78F5;
+  --accent-soft: #ECEEFF;
   --ok: #1F8A5B;
   --danger: #D92D20;
   --radius: 18px;
-  --shadow: 0 1px 2px rgba(28,26,25,.04), 0 6px 24px rgba(28,26,25,.05);
+  --shadow: 0 1px 2px rgba(0,2,18,.04), 0 6px 24px rgba(0,2,18,.05);
+  --nav: #000212;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #141312; --panel: #1E1C1B; --text: #F4F1EE; --muted: #A39D98; --line: #33302D;
-    --accent-soft: #3A2218; --shadow: none;
+    --bg: #000212; --panel: #0B0E22; --text: #FFFFFF; --muted: #AEAFB0; --line: #1E2238;
+    --accent-soft: #161B4A; --shadow: none; --nav: #000000;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #141312; --panel: #1E1C1B; --text: #F4F1EE; --muted: #A39D98; --line: #33302D;
-  --accent-soft: #3A2218; --shadow: none;
+  --bg: #000212; --panel: #0B0E22; --text: #FFFFFF; --muted: #AEAFB0; --line: #1E2238;
+  --accent-soft: #161B4A; --shadow: none; --nav: #000000;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: var(--text); background: var(--bg);
+  font-family: Urbanist, Arial, 'Helvetica Neue', sans-serif; color: var(--text); background: var(--bg);
   display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; -webkit-font-smoothing: antialiased;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -239,4 +241,27 @@ input:invalid:not(:placeholder-shown) { border-color: var(--danger); }
   body * { visibility: hidden; }
   #tableCard, #tableCard * { visibility: visible; }
   #tableCard { position: fixed; top: 40px; left: 50%; transform: translateX(-50%) scale(1.6); transform-origin: top center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* H&H nav: always on the dark brand canvas, with the reverse (white) logo */
+.nav { background: var(--nav); border-color: transparent; color: #fff; }
+.brand { flex-direction: column; align-items: flex-start; gap: 14px; padding: 4px 10px 6px; }
+.brand-logo { height: 34px; width: auto; display: block; }
+.brand-icon { display: none; height: 30px; width: auto; }
+.product { font-size: 15px; font-weight: 500; color: #AEAFB0; letter-spacing: .2px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); align-self: stretch; }
+.product b { color: #fff; font-weight: 700; }
+.tab { color: #AEAFB0; }
+.tab:hover { background: rgba(255,255,255,.06); color: #fff; }
+.tab.active { background: rgba(76,92,240,.2); color: #fff; }
+.tab.active svg { color: #4C5CF0; }
+.nav-foot { color: #75758A; line-height: 1.5; }
+.nav-foot a { color: #AEAFB0; }
+.btn.primary { background: #4C5CF0; }
+.btn.primary:hover { background: #5B6AF5; }
+.empty-art, .num { background: #4C5CF0; }
+@media (max-width: 860px) {
+  .brand { flex-direction: row; align-items: center; padding: 0; }
+  .brand-logo { display: none; }
+  .brand-icon { display: block; }
+  .product { display: none; }
 }

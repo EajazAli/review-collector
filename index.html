@@ -3,28 +3,73 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Review Collector</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet" />
+  <title>Review Finder</title>
+  <link rel="icon" type="image/png" href="assets/brand/HH_Icon_Navy.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    :root { --from: #FFB23F; --to: #F2581E; }
+    :root { --ink: #000212; --indigo: #4C5CF0; --blue: #004AAD; --body: #AEAFB0; --muted: #75758A; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #fff; background: linear-gradient(160deg, var(--from), var(--to)); background-color: var(--to); }
-    main { max-width: 520px; text-align: center; }
-    h1 { font-size: clamp(30px, 7vw, 44px); margin: 0 0 12px; letter-spacing: -.8px; line-height: 1.1; }
-    p { font-size: 17px; line-height: 1.55; opacity: .92; margin: 0 0 28px; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh; display: flex; flex-direction: column; font-family: Urbanist, Arial, 'Helvetica Neue', Helvetica, sans-serif;
+      color: #fff; background: var(--ink); -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    .glow { position: fixed; width: 720px; height: 720px; border-radius: 50%; top: -360px; right: -220px; background: radial-gradient(circle, rgba(76,92,240,.35), transparent 65%); pointer-events: none; }
+    header { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 22px max(16px, 5vw); }
+    header img { height: 40px; width: auto; display: block; }
+    header a { color: var(--body); text-decoration: none; font-weight: 600; font-size: 15px; }
+    header a:hover { color: #fff; }
+    main { position: relative; flex: 1; display: grid; place-items: center; padding: 24px 16px 48px; }
+    .hero { max-width: 760px; text-align: center; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 99px; border: 1px solid rgba(76,92,240,.45); background: rgba(76,92,240,.1); font-size: 13px; font-weight: 600; color: #C9CEFF; margin-bottom: 22px; }
+    .eyebrow svg { width: 16px; height: 16px; }
+    h1 { font-size: clamp(36px, 7vw, 64px); font-weight: 600; line-height: 1.05; letter-spacing: -1px; margin: 0 0 18px; }
+    h1 em { font-style: normal; color: var(--indigo); }
+    p { font-size: 18px; line-height: 1.6; color: var(--body); margin: 0 auto 32px; max-width: 580px; }
     .row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    a { display: inline-flex; align-items: center; min-height: 52px; padding: 0 26px; border-radius: 999px; border: 2px solid #fff; color: #fff; text-decoration: none; font-weight: 800; }
-    a.solid { background: #fff; color: var(--to); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 26px; border-radius: 12px; font-weight: 600; font-size: 17px; text-decoration: none; transition: transform .15s, background .2s; }
+    .btn:active { transform: scale(.98); }
+    .solid { background: var(--indigo); color: #fff; }
+    .solid:hover { background: #5B6AF5; }
+    .line { border: 1px solid rgba(255,255,255,.22); color: #fff; }
+    .line:hover { background: rgba(255,255,255,.06); }
+    .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 56px; text-align: left; }
+    .flow div { border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); border-radius: 16px; padding: 18px; }
+    .flow b { display: block; font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .flow span { font-size: 14.5px; line-height: 1.5; color: var(--body); }
+    .flow i { font-style: normal; color: var(--indigo); font-weight: 700; font-size: 13px; display: block; margin-bottom: 8px; }
+    footer { position: relative; padding: 20px 16px 28px; text-align: center; font-size: 13px; color: var(--muted); }
+    footer a { color: var(--body); }
+    @media (max-width: 640px) { .flow { grid-template-columns: 1fr; } header img { height: 34px; } }
   </style>
 </head>
 <body>
+  <div class="glow" aria-hidden="true"></div>
+  <header>
+    <img src="assets/brand/HH_Logo_Primary_Reverse_White.png" alt="H&H Technology" />
+    <a href="admin.html">Dashboard →</a>
+  </header>
   <main>
-    <h1>Happy guests go to Google.<br />Unhappy guests come to you.</h1>
-    <p>Guests scan a QR code and rate their visit. High ratings are sent to Google. Low ratings go privately to the owner on WhatsApp, so the business gets a second chance.</p>
-    <div class="row">
-      <a class="solid" href="admin.html">Open dashboard</a>
-      <a href="review.html?b=demo-cafe">Try the guest page</a>
+    <div class="hero">
+      <span class="eyebrow">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+        Review Finder · Built for Google Reviews
+      </span>
+      <h1>More <em>5-star</em> reviews.<br />A second chance on the rest.</h1>
+      <p>Guests scan a QR code and rate their visit. Happy guests are guided to post on Google. Unhappy guests reach the owner privately on WhatsApp, before it ever goes public.</p>
+      <div class="row">
+        <a class="btn solid" href="admin.html">Open dashboard</a>
+        <a class="btn line" href="review.html?b=demo-cafe">Try the guest page</a>
+      </div>
+      <div class="flow">
+        <div><i>01</i><b>Scan</b><span>A branded QR code on every table, with the venue's logo in the middle.</span></div>
+        <div><i>02</i><b>Rate</b><span>A friendly face reacts to the rating. Ratings at or above your threshold go to Google.</span></div>
+        <div><i>03</i><b>Recover</b><span>Lower ratings, with photos, go straight to the owner to make it right.</span></div>
+      </div>
     </div>
   </main>
+  <footer>Review Finder by <a href="https://www.hnhmena.com" target="_blank" rel="noopener">H&amp;H Technology</a> · Jeddah, Saudi Arabia</footer>
 </body>
 </html>

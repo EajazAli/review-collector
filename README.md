@@ -1,4 +1,4 @@
-# Review Collector
+# Review Finder by H&H Technology
 
 Guests scan a QR code and rate their visit.
 - **At or above the threshold** → "Post to Google!" Their text is copied and Google's review form opens.
