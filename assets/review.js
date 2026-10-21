@@ -74,6 +74,8 @@
     morphFace(FACES[r], animate);
 
     const cta = $('cta');
+    // Google's rules: every guest must be free to review on Google, whatever their rating.
+    $('gAnyway').hidden = !r || isPublic() || !RC.googleLink(biz || {});
     if (!r) { cta.disabled = true; cta.textContent = 'Submit'; $('details').hidden = true; return; }
     $('details').hidden = false;
     cta.disabled = false;
@@ -150,18 +152,7 @@
     const text = $('text').value.trim();
     const item = { rating, route: isPublic() ? 'google' : 'private', text };
 
-    if (isPublic()) {
-      let copied = false;
-      if (text) { try { await navigator.clipboard.writeText(text); copied = true; } catch { /* clipboard blocked */ } }
-      $('stepCopy').innerHTML = copied ? '<b>Your review is copied.</b>' : (text ? 'Copy your review text first.' : 'Write a few words about your visit.');
-      $('sheetStars').textContent = `${rating} star${rating > 1 ? 's' : ''}`;
-      $('toGoogle').href = RC.googleLink(biz) || '#';
-      $('sheet').hidden = false;
-      if (!isPreview) {
-        RC.submitReview(biz, item).then(({ review }) => RC.deliver(biz, { ...review, slug: biz.slug }));
-      }
-      return;
-    }
+    if (isPublic()) { await openGoogle(item); return; }
 
     if (!text && !photos.length) { toast('Please tell us a little about what happened'); $('text').focus(); return; }
     Object.assign(item, { guestName: $('guestName').value.trim(), guestPhone: $('guestPhone').value.trim() });
@@ -195,9 +186,41 @@ ${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review
     showDone('private');
   });
 
+  // Copy the guest's text and show the "how to post on Google" steps. Records the rating once.
+  async function openGoogle(item, record = true) {
+    let copied = false;
+    if (item.text) { try { await navigator.clipboard.writeText(item.text); copied = true; } catch { /* clipboard blocked */ } }
+    $('stepCopy').innerHTML = copied ? '<b>Your review is copied.</b>' : (item.text ? 'Copy your review text first.' : 'Write a few words about your visit.');
+    $('sheetStars').textContent = `${item.rating} star${item.rating > 1 ? 's' : ''}`;
+    $('toGoogle').href = RC.googleLink(biz) || '#';
+    $('sheet').hidden = false;
+    if (record && !isPreview) {
+      RC.submitReview(biz, { ...item, route: 'google' }).then(({ review }) => RC.deliver(biz, { ...review, slug: biz.slug }));
+    }
+  }
+
+  // Second layer for low ratings: Google is always an option, and so is the management.
+  $('gAnyway').addEventListener('click', () => {
+    $('choiceBiz').textContent = biz.name || 'this business';
+    $('choice').hidden = false;
+  });
+  $('choiceGoogle').addEventListener('click', async () => {
+    $('choice').hidden = true;
+    await openGoogle({ rating, text: $('text').value.trim() });
+  });
+  $('choiceMgmt').addEventListener('click', () => {
+    $('choice').hidden = true;
+    $('text').focus();
+    toast('Tell the management what happened, then tap Send');
+  });
+  $('choiceClose').addEventListener('click', () => { $('choice').hidden = true; });
+  $('choice').addEventListener('click', (e) => { if (e.target === $('choice')) $('choice').hidden = true; });
+  // After a private message, the guest can still post on Google.
+  $('gAfter').addEventListener('click', () => openGoogle({ rating, text: $('text').value.trim() }, false));
+
   $('toGoogle').addEventListener('click', (e) => {
     if ($('toGoogle').getAttribute('href') === '#') { e.preventDefault(); toast('Google link not set up yet'); return; }
-    setTimeout(() => { $('sheet').hidden = true; showDone('google'); }, 300);
+    setTimeout(() => { $('sheet').hidden = true; if ($('done').hidden) showDone('google'); }, 300);
   });
   $('sheetClose').addEventListener('click', () => { $('sheet').hidden = true; });
   $('sheet').addEventListener('click', (e) => { if (e.target === $('sheet')) $('sheet').hidden = true; });
@@ -211,6 +234,7 @@ ${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review
       private: ["Thanks for telling us", `Your message went straight to the owner of ${name}. We'll make it right.`],
       skip: ['Thanks for visiting', `Follow ${name} for news and offers.`],
     }[kind];
+    $('gAfter').hidden = kind !== 'private' || !RC.googleLink(biz);
     $('doneTitle').textContent = copy[0];
     $('doneText').textContent = copy[1];
     $('rate').hidden = true;

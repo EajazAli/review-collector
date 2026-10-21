@@ -197,3 +197,13 @@ textarea:focus, input:focus { border-color: var(--ink); background: color-mix(in
           mask: url(brand/HH_Icon_White.png) center / contain no-repeat;
 }
 .done .powered { position: absolute; left: 0; right: 0; bottom: calc(20px + var(--safe-b)); }
+
+/* "Post it to Google" for low ratings (keeps every guest free to review on Google) */
+.link-g { display: block; margin: 12px auto 0; background: none; border: 0; padding: 6px 10px; cursor: pointer; color: var(--ink); opacity: .85; font-size: 13.5px; font-weight: 600; }
+.link-g u { text-underline-offset: 3px; }
+.link-g:hover { opacity: 1; }
+.sheet-text { margin: 0; color: #4b4b55; font-size: 15px; text-align: center; line-height: 1.5; }
+.mgmt { justify-self: stretch; display: grid; gap: 4px; padding: 14px 16px; border-radius: 16px; background: #F4F5FA; border: 1px solid #E6E8F2; font-size: 14px; color: #4b4b55; line-height: 1.45; margin: 4px 0 6px; }
+.mgmt b { color: #1b1b1f; font-size: 15px; }
+.sheet .cta.outline { border: 2px solid var(--to); color: var(--to); background: #fff; }
+.done .link-g { color: var(--ink); }
