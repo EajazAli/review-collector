@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in · Review Finder</title>
+  <link rel="icon" type="image/png" href="assets/brand/HH_Icon_Navy.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --ink: #000212; --panel: #0B0E22; --line: #1E2238; --indigo: #4C5CF0; --body: #AEAFB0; --muted: #75758A; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      min-height: 100vh; display: grid; place-items: center; padding: 24px 16px;
+      font-family: Urbanist, Arial, 'Helvetica Neue', Helvetica, sans-serif; color: #fff; background: var(--ink);
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    .glow { position: fixed; width: 640px; height: 640px; border-radius: 50%; top: -320px; left: 50%; transform: translateX(-50%); background: radial-gradient(circle, rgba(76,92,240,.32), transparent 65%); pointer-events: none; }
+    .card { position: relative; width: 100%; max-width: 400px; background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 32px 28px 26px; }
+    .logo { height: 40px; width: auto; display: block; margin-bottom: 26px; }
+    h1 { margin: 0 0 6px; font-size: 26px; font-weight: 600; letter-spacing: -.3px; }
+    h1 em { font-style: normal; color: var(--indigo); }
+    p.sub { margin: 0 0 24px; color: var(--body); font-size: 15px; line-height: 1.5; }
+    label { display: grid; gap: 7px; font-size: 13px; font-weight: 600; color: var(--body); margin-bottom: 14px; }
+    input { width: 100%; font: inherit; font-size: 16px; color: #fff; background: var(--ink); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; outline: none; transition: border-color .2s, box-shadow .2s; }
+    input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(76,92,240,.25); }
+    button { width: 100%; min-height: 50px; border: 0; border-radius: 12px; background: var(--indigo); color: #fff; font: inherit; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 6px; transition: background .2s; }
+    button:hover { background: #5B6AF5; }
+    button:disabled { opacity: .6; cursor: progress; }
+    .msg { min-height: 20px; margin: 12px 0 0; font-size: 14px; color: #F97066; }
+    .msg.ok { color: #6CE9A6; }
+    .help { margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+    .help a { color: var(--body); }
+    .setup { color: var(--body); font-size: 14.5px; line-height: 1.55; }
+    .setup code { background: var(--ink); padding: 1px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <main class="card">
+    <img class="logo" src="assets/brand/HH_Logo_Primary_Reverse_White.png" alt="H&amp;H Technology" />
+    <h1>Review <em>Finder</em></h1>
+    <p class="sub">Sign in to see your reviews and customise your QR code.</p>
+
+    <form id="form" hidden>
+      <label>Email<input id="email" type="email" autocomplete="username" required /></label>
+      <label>Password<input id="password" type="password" autocomplete="current-password" required /></label>
+      <button id="go" type="submit">Sign in</button>
+      <p class="msg" id="msg" role="alert"></p>
+    </form>
+
+    <p class="setup" id="setup" hidden>
+      Review Finder isn't connected to its database yet. Add your Supabase details to <code>assets/config.js</code>.
+    </p>
+
+    <p class="help">No login yet, or forgot your password? Contact H&amp;H Technology on
+      <a href="https://wa.me/966504920373" target="_blank" rel="noopener">WhatsApp +966 504 920 373</a>.</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/store.js"></script>
+  <script>
+    (async () => {
+      const $ = (id) => document.getElementById(id);
+      if (!RC.configured) { $('setup').hidden = false; return; }
+      if (await RC.session()) { location.replace('admin.html'); return; }
+      $('form').hidden = false;
+      $('email').focus();
+      $('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        $('go').disabled = true; $('go').textContent = 'Signing in…'; $('msg').textContent = '';
+        try {
+          await RC.signIn($('email').value, $('password').value);
+          location.replace('admin.html');
+        } catch (err) {
+          $('msg').textContent = /invalid/i.test(err.message) ? 'Wrong email or password.' : err.message;
+          $('go').disabled = false; $('go').textContent = 'Sign in';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

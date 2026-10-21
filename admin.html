@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Review Finder Admin</title>
+  <title>Review Finder Dashboard</title>
   <link rel="icon" type="image/png" href="assets/brand/HH_Icon_Navy.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/admin.css" />
 </head>
-<body>
+<body class="loading">
+  <div class="gate" id="gate"><div class="spinner" aria-label="Loading"></div><div class="gate-msg" id="gateMsg" hidden></div></div>
   <aside class="nav">
     <div class="brand">
       <img class="brand-logo" src="assets/brand/HH_Logo_Primary_Reverse_White.png" alt="H&amp;H Technology" />
@@ -18,10 +19,15 @@
       <span class="product">Review <b>Finder</b></span>
     </div>
     <nav>
-      <button class="tab active" data-view="businesses"><svg viewBox="0 0 24 24"><path d="M3 10l2-6h14l2 6M4 10v10h16V10M3 10h18M9 20v-5h6v5"/></svg>Businesses</button>
-      <button class="tab" data-view="inbox"><svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5"/></svg>Feedback inbox<span class="pill" id="inboxCount" hidden></span></button>
-      <button class="tab" data-view="publish"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M4 15v5h16v-5"/></svg>Publish</button>
+      <button class="tab active" data-view="businesses"><svg viewBox="0 0 24 24"><path d="M3 10l2-6h14l2 6M4 10v10h16V10M3 10h18M9 20v-5h6v5"/></svg><span id="tabBizLabel">Businesses</span></button>
+      <button class="tab" data-view="inbox"><svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5"/></svg>Reviews<span class="pill" id="inboxCount" hidden></span></button>
+      <button class="tab" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
     </nav>
+    <div class="who">
+      <span class="who-av" id="whoAv"></span>
+      <span class="who-text"><b id="whoEmail"></b><small id="whoRole"></small></span>
+      <button class="who-out" id="signOut" title="Sign out" aria-label="Sign out"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg></button>
+    </div>
     <p class="nav-foot">Review Finder by <a href="https://www.hnhmena.com" target="_blank" rel="noopener">H&amp;H Technology</a></p>
   </aside>
 
@@ -29,8 +35,8 @@
     <!-- BUSINESSES -->
     <section class="view" id="view-businesses">
       <header class="page-head">
-        <div><h1>Businesses</h1><p class="muted">Create a review page and QR code for each business.</p></div>
-        <button class="btn primary" id="addBiz"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New business</button>
+        <div><h1 id="bizTitle">Businesses</h1><p class="muted" id="bizSub">Create a review page and QR code for each business.</p></div>
+        <button class="btn primary admin-only" id="addBiz"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New business</button>
       </header>
 
       <div class="biz-strip" id="bizList"></div>
@@ -52,6 +58,13 @@
               </div>
             </div>
             <button type="button" class="link small" id="logoRemove" hidden>Remove logo</button>
+          </div>
+
+          <div class="card admin-only">
+            <h2>Client logins</h2>
+            <p class="muted small">Email addresses that can sign in and manage this business, one per line. They see only this business and its reviews.</p>
+            <textarea name="members" rows="3" placeholder="owner@restaurant.com"></textarea>
+            <p class="note">To create a login: Supabase → <b>Authentication → Users → Add user → Create new user</b>, enter the same email and a password, tick <b>Auto Confirm User</b>. Then send the client the login page and their password.</p>
           </div>
 
           <div class="card">
@@ -98,7 +111,7 @@
           </div>
 
           <div class="savebar">
-            <button type="button" class="btn danger ghost" id="deleteBiz">Delete</button>
+            <button type="button" class="btn danger ghost admin-only" id="deleteBiz">Delete</button>
             <span class="status" id="saveStatus"></span>
             <button type="submit" class="btn primary">Save changes</button>
           </div>
@@ -129,48 +142,45 @@
 
       <div class="empty" id="emptyState" hidden>
         <div class="empty-art">★</div>
-        <h2>No businesses yet</h2>
-        <p class="muted">Add your first business to get a review page and QR code.</p>
-        <button class="btn primary" id="addBiz2">New business</button>
+        <h2 id="emptyTitle">No businesses yet</h2>
+        <p class="muted" id="emptyText">Add your first business to get a review page and QR code.</p>
+        <button class="btn primary admin-only" id="addBiz2">New business</button>
       </div>
     </section>
 
     <!-- INBOX -->
     <section class="view" id="view-inbox" hidden>
       <header class="page-head">
-        <div><h1>Feedback inbox</h1><p class="muted">Low ratings that went to the owner instead of Google.</p></div>
+        <div><h1>Reviews</h1><p class="muted">Every rating from your QR code. Private ones need your attention.</p></div>
         <div class="filters">
           <select id="fBiz"></select>
-          <select id="fRoute"><option value="private">Private only</option><option value="all">All ratings</option></select>
+          <select id="fRoute"><option value="private">Private only</option><option value="google">Sent to Google</option><option value="all">All ratings</option></select>
         </div>
       </header>
       <div class="stats" id="stats"></div>
       <div class="feed" id="feed"></div>
-      <p class="muted small">This inbox shows feedback saved in this browser. Live feedback arrives on WhatsApp through your webhook.</p>
     </section>
 
-    <!-- PUBLISH -->
-    <section class="view" id="view-publish" hidden>
-      <header class="page-head"><div><h1>Publish</h1><p class="muted">Changes are saved in this browser. Publish them so guests' phones can see them.</p></div></header>
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings" hidden>
+      <header class="page-head"><div><h1>Settings</h1><p class="muted">Changes save straight to the cloud. Guests see them right away.</p></div></header>
       <div class="publish">
-        <div class="card step"><span class="num">1</span><div>
-          <h2>Your public site address</h2>
-          <p class="muted small">The address of your GitHub Pages or Netlify site. QR codes point here.</p>
-          <div class="inline"><input id="publicUrl" placeholder="https://yourname.github.io/review-collector/" /><button class="btn" id="savePublic">Save</button></div>
-        </div></div>
-        <div class="card step"><span class="num">2</span><div>
-          <h2>Download businesses.json</h2>
-          <p class="muted small">This contains every business, logo and setting.</p>
-          <button class="btn primary" id="exportJson">Download businesses.json</button>
-        </div></div>
-        <div class="card step"><span class="num">3</span><div>
-          <h2>Upload it to GitHub</h2>
-          <p class="muted small">In your repository, open the <code>data</code> folder → <b>Add file → Upload files</b> → drop in <code>businesses.json</code> → <b>Commit changes</b>. The site updates within about a minute.</p>
-        </div></div>
-        <div class="card"><h2>Backup &amp; restore</h2>
+        <form class="card" id="pwForm">
+          <h2>Change password</h2>
+          <p class="muted small">Signed in as <b id="pwEmail"></b>.</p>
+          <div class="inline"><input id="newPw" type="password" minlength="8" autocomplete="new-password" placeholder="New password (8+ characters)" required /><button class="btn primary">Update</button></div>
+        </form>
+        <div class="card admin-only">
+          <h2>Public site address</h2>
+          <p class="muted small">QR codes point here. Leave empty to use the address you're on now.</p>
+          <div class="inline"><input id="publicUrl" placeholder="https://reviewfinder-hnhmena.netlify.app" /><button class="btn" id="savePublic">Save</button></div>
+        </div>
+        <div class="card admin-only">
+          <h2>Import businesses</h2>
+          <p class="muted small">Copy businesses from the old <code>data/businesses.json</code> into the database. Existing ones (same page link) are updated, not duplicated.</p>
           <div class="btn-row">
-            <label class="btn">Import JSON<input type="file" id="importJson" accept="application/json" hidden /></label>
-            <button class="btn" id="reloadPublished">Reload from live site</button>
+            <button class="btn" id="importLive">Import from live site</button>
+            <label class="btn">Import JSON file<input type="file" id="importJson" accept="application/json" hidden /></label>
           </div>
         </div>
       </div>
@@ -180,6 +190,8 @@
   <div class="toast" id="toast" hidden></div>
 
   <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="assets/config.js"></script>
   <script src="assets/store.js"></script>
   <script src="assets/admin.js"></script>
 </body>

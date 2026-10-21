@@ -35,6 +35,22 @@ In Google Business Profile, click **Ask for reviews** and copy the link (looks l
 
 > Google does not let any app post a review for a guest. That is why the page copies their text and opens Google's own review box, where they paste it and tap stars. This is the same flow every review tool uses.
 
+## Client logins (Supabase)
+Each business owner signs in at `login.html` and sees only their business: QR code, page customisation and reviews (with photos). H&H admins (emails in the `admins` table) see and manage everything.
+
+**One-time setup**
+1. Create a free project at supabase.com (region: closest to KSA, e.g. Frankfurt or Mumbai).
+2. **SQL Editor → New query** → paste `supabase/schema.sql` → **Run**.
+3. **Authentication → Sign In / Providers** → turn **off** "Allow new users to sign up" (only you create logins).
+4. **Project Settings → API**: copy the **Project URL** and the **anon / publishable** key into `assets/config.js`. Never use the service_role/secret key.
+5. **Authentication → Users → Add user → Create new user** with your own email (eajazali@gmail.com) and a password, tick **Auto Confirm User**. Sign in at `login.html`.
+6. Dashboard → **Settings → Import from live site** copies the businesses from `data/businesses.json` into the database.
+
+**Adding a client login**
+1. Supabase → **Authentication → Users → Add user** → their email + a password → **Auto Confirm User**.
+2. Dashboard → open their business → **Client logins** → add the same email → **Save changes**.
+3. Send them `https://<your-site>/login.html` and their password. They can change it under Settings.
+
 ## Sending low ratings to WhatsApp (two contacts + backend)
 A static site can't hold WhatsApp credentials safely, so delivery goes through a **webhook**:
 
