@@ -326,7 +326,8 @@
 
     const route = $('fRoute').value;
     const shown = route === 'all' ? scoped : scoped.filter((r) => r.route === route);
-    const name = (id) => list.find((b) => b.id === id)?.name || '';
+    const biz = (id) => list.find((b) => b.id === id) || {};
+    const name = (id) => biz(id).name || '';
     $('feed').innerHTML = shown.length ? shown.map((r) => `
       <article class="fb ${r.status === 'resolved' ? 'resolved' : ''}">
         <div class="fb-top">
@@ -338,6 +339,10 @@
         </div>
         ${r.text ? `<p>${RC.esc(r.text)}</p>` : '<p class="muted">No comment</p>'}
         ${r.images?.length ? `<div class="fb-imgs">${r.images.map((p) => photoLinks[p] ? `<img src="${RC.esc(photoLinks[p])}" alt="Guest photo">` : '').join('')}</div>` : ''}
+        ${r.route === 'google' ? `<div class="fb-foot">
+          <span class="who-line">Guest was sent to Google${RC.googleReviewsUrl(biz(r.business_id)) ? ` · <a class="link small" target="_blank" rel="noopener" href="${RC.esc(RC.googleReviewsUrl(biz(r.business_id)))}">See it on Google</a>` : ''}</span>
+          <a class="btn g-btn" target="_blank" rel="noopener" href="${RC.GOOGLE_REPLY_URL}" title="Opens your Google Business Profile reviews, where you can reply"><svg viewBox="0 0 48 48" aria-hidden="true">${document.querySelector('#openGoogleReviews svg').innerHTML}</svg>Reply on Google</a>
+        </div>` : ''}
         ${r.route === 'private' ? `<div class="fb-foot">
           <span class="who-line">${RC.esc(r.guest_name || 'Anonymous')}${r.guest_phone ? ' · ' + RC.esc(r.guest_phone) : ''}</span>
           ${r.guest_phone ? `<a class="btn" target="_blank" rel="noopener" href="${RC.waLink(r.guest_phone, `Hi ${r.guest_name || ''}, this is ${name(r.business_id)}. Thank you for your feedback, we're sorry about your visit.`)}">Reply on WhatsApp</a>` : ''}

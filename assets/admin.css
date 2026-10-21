@@ -292,3 +292,11 @@ input[readonly] { opacity: .65; cursor: not-allowed; }
   .who { margin: 0 0 0 auto; padding: 4px; background: none; }
   .who-text { display: none; }
 }
+
+/* Google reply shortcuts */
+.g-btn svg { stroke: none; width: 18px; height: 18px; }
+.fb-foot .g-btn { padding: 7px 12px; font-size: 13px; }
+.g-tip { margin: -6px 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); font-size: 13.5px; line-height: 1.5; }
+
+a.btn { text-decoration: none; color: inherit; }
+a.btn.primary { color: #fff; }

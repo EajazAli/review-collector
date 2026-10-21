@@ -224,6 +224,17 @@ const RC = (() => {
     return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(v)}`; // bare Place ID
   }
 
+  // Where an owner replies to Google reviews (signed in with the account that manages the profile).
+  const GOOGLE_REPLY_URL = 'https://business.google.com/reviews';
+  function placeId(b) {
+    const v = (b.googleReviewUrl || '').trim();
+    if (!v) return '';
+    if (!/^https?:/i.test(v)) return v;
+    try { return new URL(v).searchParams.get('placeid') || ''; } catch { return ''; }
+  }
+  // Public list of the business's Google reviews (needs a Place ID).
+  const googleReviewsUrl = (b) => (placeId(b) ? `https://search.google.com/local/reviews?placeid=${encodeURIComponent(placeId(b))}` : '');
+
   const settings = () => ({ publicUrl: '', ...read(K.settings, {}) });
   const saveSettings = (s) => write(K.settings, s);
 
@@ -292,6 +303,6 @@ const RC = (() => {
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
     listMembers, setMembers, submitReview, listReviews, updateReview, photoUrls,
-    googleLink, siteBase, reviewUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
+    googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
   };
 })();
