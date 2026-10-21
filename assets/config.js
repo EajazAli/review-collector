@@ -5,6 +5,6 @@
  * NEVER put the service_role / secret key here.
  */
 window.RF_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: '',
+  SUPABASE_URL: 'https://dmyowzcesfdmvxnryumw.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_nzlgAFUoLj3XLwaUpfMkMQ_TtSe4biT',
 };
