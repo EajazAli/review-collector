@@ -1,18 +1,21 @@
 /* Review Finder — data layer.
- * Built for static hosting (GitHub Pages / Netlify):
- *  - Businesses are published in data/businesses.json. The admin edits a working copy in
- *    localStorage and exports a fresh businesses.json to commit to the repo.
- *  - Feedback is POSTed to each business's webhook (Make / Zapier / Netlify Function → WhatsApp + email)
- *    and also kept in localStorage on the device that submitted it (demo / inbox).
+ * Backend: Supabase (Postgres + Auth + Storage), configured in assets/config.js.
+ *  - businesses: public read (the guest page needs them); clients edit their own; H&H admins manage all
+ *  - reviews: guests insert anonymously; only that business's logins can read them
+ *  - photos: private bucket, shown to owners via short-lived signed links
+ * If Supabase isn't configured yet, the guest page falls back to data/businesses.json (read-only).
  */
 const RC = (() => {
-  const K = { biz: 'rc.businesses.v1', fb: 'rc.feedback.v1', settings: 'rc.settings.v1' };
+  const cfg = window.RF_CONFIG || {};
+  const configured = !!(cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && window.supabase);
+  const sb = configured ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY) : null;
 
+  const K = { settings: 'rc.settings.v1' };
   const read = (k, fallback) => {
     try { const v = JSON.parse(localStorage.getItem(k)); return v ?? fallback; } catch { return fallback; }
   };
   const write = (k, v) => {
-    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { console.warn('storage', e); return false; }
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; }
   };
 
   const THEMES = {
@@ -25,13 +28,17 @@ const RC = (() => {
     midnight: { label: 'Midnight', from: '#3A3F58', to: '#11131C', ink: '#FFFFFF', face: '#FFC86B' },
     sand:     { label: 'Sand',     from: '#FFF1D6', to: '#F5C98B', ink: '#3B2A12', face: '#3B2A12' },
   };
+  const EMPTY_SOCIAL = { instagram: '', tiktok: '', snapchat: '', facebook: '', x: '', website: '' };
 
   const uid = () => Math.random().toString(36).slice(2, 10);
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    }));
   const slugify = (s) => (s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
 
   const newBusiness = () => ({
-    id: uid(),
     slug: '',
     name: '',
     tagline: 'Your feedback helps us get better every day.',
@@ -41,10 +48,46 @@ const RC = (() => {
     googleReviewUrl: '',
     whatsapp: ['', ''],
     webhookUrl: '',
-    social: { instagram: '', tiktok: '', snapchat: '', facebook: '', x: '', website: '' },
-    createdAt: new Date().toISOString(),
+    social: { ...EMPTY_SOCIAL },
   });
 
+  // ---------- Row mapping ----------
+  const fromRow = (r) => ({
+    id: r.id, slug: r.slug, name: r.name, tagline: r.tagline, logo: r.logo,
+    theme: { ...THEMES.sunset, ...(r.theme || {}) }, threshold: r.threshold,
+    googleReviewUrl: r.google_review_url, whatsapp: [...(r.whatsapp || []), '', ''].slice(0, 2),
+    webhookUrl: r.webhook_url, social: { ...EMPTY_SOCIAL, ...(r.social || {}) },
+    createdAt: r.created_at, updatedAt: r.updated_at,
+  });
+  const toRow = (b) => ({
+    slug: b.slug, name: b.name || '', tagline: b.tagline || '', logo: b.logo || '',
+    theme: b.theme || {}, threshold: +b.threshold || 4,
+    google_review_url: b.googleReviewUrl || '', whatsapp: (b.whatsapp || ['', '']).map((x) => (x || '').trim()),
+    webhook_url: b.webhookUrl || '', social: b.social || {},
+  });
+  const fail = (error) => { if (error) throw new Error(error.message || String(error)); };
+
+  // ---------- Auth ----------
+  async function session() {
+    if (!sb) return null;
+    const { data } = await sb.auth.getSession();
+    return data.session;
+  }
+  async function signIn(email, password) {
+    const { error } = await sb.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    fail(error);
+  }
+  async function signOut() { if (sb) await sb.auth.signOut(); }
+  async function updatePassword(password) { const { error } = await sb.auth.updateUser({ password }); fail(error); }
+  async function me() {
+    const s = await session();
+    if (!s) return null;
+    const email = (s.user.email || '').toLowerCase();
+    const { data } = await sb.from('admins').select('email').eq('email', email).maybeSingle();
+    return { email, isAdmin: !!data };
+  }
+
+  // ---------- Businesses ----------
   async function fetchPublished() {
     try {
       const r = await fetch('data/businesses.json', { cache: 'no-store' });
@@ -54,34 +97,137 @@ const RC = (() => {
     } catch { return []; }
   }
 
-  // Admin working copy: seeded from the published file the first time.
-  async function adminList() {
-    let list = read(K.biz, null);
-    if (!list) { list = await fetchPublished(); write(K.biz, list); }
-    return list;
+  // Businesses this login may manage (admins: all).
+  async function listBusinesses(user) {
+    let q = sb.from('businesses').select('*').order('created_at');
+    if (!user.isAdmin) {
+      const { data: m, error } = await sb.from('business_members').select('business_id').eq('email', user.email);
+      fail(error);
+      const ids = (m || []).map((x) => x.business_id);
+      if (!ids.length) return [];
+      q = q.in('id', ids);
+    }
+    const { data, error } = await q;
+    fail(error);
+    return data.map(fromRow);
   }
-  const saveList = (list) => write(K.biz, list);
 
-  // Guest page: the published version wins. With draft=true (admin "Open page"), this browser's
-  // unpublished copy wins. A business that only exists locally is still shown so it can be tested.
-  async function getBusiness(slug, draft = false) {
-    const local = (read(K.biz, []) || []).find((b) => b.slug === slug);
-    if (draft && local) return local;
-    return (await fetchPublished()).find((b) => b.slug === slug) || local || null;
+  // Public lookup for the guest page.
+  async function getBusiness(slug) {
+    if (sb) {
+      const { data, error } = await sb.from('businesses').select('*').eq('slug', slug).maybeSingle();
+      if (!error && data) return fromRow(data);
+    }
+    // Not in the database (yet): fall back to the old static file so printed QR codes keep working.
+    return (await fetchPublished()).find((b) => b.slug === slug) || null;
   }
 
+  async function uploadLogo(businessId, dataUrl) {
+    const blob = await (await fetch(dataUrl)).blob();
+    const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+    const path = `${businessId}/logo-${Date.now()}.${ext}`;
+    const { error } = await sb.storage.from('logos').upload(path, blob, { contentType: blob.type, upsert: true });
+    fail(error);
+    return sb.storage.from('logos').getPublicUrl(path).data.publicUrl;
+  }
+
+  async function createBusiness(b) {
+    const { data, error } = await sb.from('businesses').insert(toRow(b)).select().single();
+    fail(error);
+    return fromRow(data);
+  }
+
+  async function saveBusiness(b) {
+    if (b.logo && b.logo.startsWith('data:')) b = { ...b, logo: await uploadLogo(b.id, b.logo) };
+    const { data, error } = await sb.from('businesses').update(toRow(b)).eq('id', b.id).select().single();
+    fail(error);
+    return fromRow(data);
+  }
+
+  async function deleteBusiness(id) {
+    const { error } = await sb.from('businesses').delete().eq('id', id);
+    fail(error);
+  }
+
+  // Import (admin): upsert by slug, uploading any embedded logos.
+  async function importBusinesses(list) {
+    let n = 0;
+    for (const raw of list) {
+      if (!raw.slug) continue;
+      const { data: existing } = await sb.from('businesses').select('id').eq('slug', raw.slug).maybeSingle();
+      const id = existing?.id || (await createBusiness({ ...raw, logo: '' })).id;
+      await saveBusiness({ ...raw, id });
+      n++;
+    }
+    return n;
+  }
+
+  // ---------- Client logins (members) ----------
+  async function listMembers(businessId) {
+    const { data, error } = await sb.from('business_members').select('email').eq('business_id', businessId).order('email');
+    fail(error);
+    return data.map((r) => r.email);
+  }
+  async function setMembers(businessId, emails) {
+    const clean = [...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+    const current = await listMembers(businessId);
+    const add = clean.filter((e) => !current.includes(e));
+    const del = current.filter((e) => !clean.includes(e));
+    if (add.length) fail((await sb.from('business_members').insert(add.map((email) => ({ business_id: businessId, email })))).error);
+    if (del.length) fail((await sb.from('business_members').delete().eq('business_id', businessId).in('email', del)).error);
+    return clean;
+  }
+
+  // ---------- Reviews ----------
+  async function submitReview(b, item, photos = []) {
+    const review = {
+      id: uuid(), business_id: b.id, rating: item.rating, route: item.route, text: item.text || '',
+      guest_name: item.guestName || '', guest_phone: item.guestPhone || '', images: [], status: 'new',
+    };
+    const inDb = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(b.id || '');
+    if (!sb || !inDb) return { ok: false, reason: 'not-in-database', review };
+    for (let i = 0; i < photos.length; i++) {
+      try {
+        const blob = await (await fetch(photos[i])).blob();
+        const path = `${b.id}/${review.id}-${i + 1}.jpg`;
+        const { error } = await sb.storage.from('review-photos').upload(path, blob, { contentType: 'image/jpeg' });
+        if (!error) review.images.push(path);
+      } catch { /* keep going without this photo */ }
+    }
+    const { error } = await sb.from('reviews').insert(review);
+    return { ok: !error, error: error?.message, review };
+  }
+
+  async function listReviews(businessIds) {
+    if (!businessIds.length) return [];
+    const { data, error } = await sb.from('reviews').select('*').in('business_id', businessIds)
+      .order('created_at', { ascending: false }).limit(500);
+    fail(error);
+    return data;
+  }
+  async function updateReview(id, patch) {
+    const { error } = await sb.from('reviews').update(patch).eq('id', id);
+    fail(error);
+  }
+  async function photoUrls(paths) {
+    if (!paths.length) return {};
+    const { data, error } = await sb.storage.from('review-photos').createSignedUrls(paths, 3600);
+    if (error) return {};
+    return Object.fromEntries(data.filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+  }
+
+  // ---------- Links & helpers ----------
   function googleLink(b) {
     const v = (b.googleReviewUrl || '').trim();
     if (!v) return '';
     if (/^https?:\/\//i.test(v)) return v;
-    // A bare Google Place ID
-    return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(v)}`;
+    return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(v)}`; // bare Place ID
   }
 
   const settings = () => ({ publicUrl: '', ...read(K.settings, {}) });
   const saveSettings = (s) => write(K.settings, s);
 
-  // Reduce any pasted address (e.g. ".../review.html?b=x" or ".../admin.html#publish") to the site folder.
+  // Reduce any pasted address (e.g. ".../review.html?b=x" or ".../admin.html#x") to the site folder.
   function siteBase(raw) {
     let v = (raw || '').trim();
     if (!v) v = location.href;
@@ -89,39 +235,21 @@ const RC = (() => {
     try {
       const u = new URL(v);
       let path = u.pathname;
-      const i = path.search(/\/[^/]*\.html?(\/|$)/i); // cut at the first *.html segment
+      const i = path.search(/\/[^/]*\.html?(\/|$)/i);
       if (i !== -1) path = path.slice(0, i);
       if (!path.endsWith('/')) path += '/';
       return u.origin + path;
     } catch { return ''; }
   }
+  const reviewUrl = (b) => `${siteBase(settings().publicUrl)}review.html?b=${encodeURIComponent(b.slug)}`;
 
-  function reviewUrl(b) {
-    return `${siteBase(settings().publicUrl)}review.html?b=${encodeURIComponent(b.slug)}`;
-  }
-
-  // Feedback
-  const listFeedback = () => read(K.fb, []);
-  function addFeedback(item) {
-    const list = listFeedback();
-    list.unshift(item);
-    if (!write(K.fb, list)) {
-      // Storage full: keep the message, drop the photos.
-      list[0] = { ...item, images: [], imagesDropped: item.images?.length || 0 };
-      write(K.fb, list.slice(0, 200));
-    }
-  }
-  function updateFeedback(id, patch) {
-    write(K.fb, listFeedback().map((f) => (f.id === id ? { ...f, ...patch } : f)));
-  }
-
-  async function deliver(b, item) {
+  async function deliver(b, payload) {
     if (!b.webhookUrl) return { ok: false, reason: 'no-webhook' };
     try {
       const r = await fetch(b.webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...item, business: { slug: b.slug, name: b.name }, notify: b.whatsapp.filter(Boolean) }),
+        body: JSON.stringify({ ...payload, business: { slug: b.slug, name: b.name }, notify: b.whatsapp.filter(Boolean) }),
       });
       return { ok: r.ok, status: r.status };
     } catch (e) { return { ok: false, reason: String(e) }; }
@@ -130,7 +258,6 @@ const RC = (() => {
   const waLink = (phone, text) =>
     `https://wa.me/${(phone || '').replace(/[^\d]/g, '')}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
 
-  // Resize an image file to a data URL (keeps localStorage + webhook payloads small).
   function resizeImage(file, max = 1280, type = 'image/jpeg', quality = 0.75) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -161,8 +288,10 @@ const RC = (() => {
   };
 
   return {
-    THEMES, SOCIAL, uid, slugify, newBusiness, fetchPublished, adminList, saveList, getBusiness,
-    googleLink, siteBase, reviewUrl, settings, saveSettings, listFeedback, addFeedback, updateFeedback,
-    deliver, waLink, resizeImage, initials, esc, read, write, K,
+    configured, sb, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
+    session, signIn, signOut, updatePassword, me,
+    fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
+    listMembers, setMembers, submitReview, listReviews, updateReview, photoUrls,
+    googleLink, siteBase, reviewUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
   };
 })();

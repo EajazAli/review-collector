@@ -3,19 +3,22 @@
   const form = $('editor');
   const SOCIAL_KEYS = Object.keys(RC.SOCIAL);
 
-  let list = [];
+  let user = null;        // { email, isAdmin }
+  let list = [];          // businesses this login can manage
   let currentId = null;
   let draft = null;
   let dirty = false;
   let previewReady = false;
+  let reviews = [];
+  let photoLinks = {};
 
   // ---------- Navigation ----------
   document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showView(t.dataset.view)));
   function showView(v) {
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === v));
     document.querySelectorAll('.view').forEach((s) => (s.hidden = s.id !== `view-${v}`));
-    if (v === 'inbox') renderInbox();
-    if (v === 'publish') $('publicUrl').value = RC.settings().publicUrl;
+    if (v === 'inbox') loadReviews();
+    if (v === 'settings') { $('publicUrl').value = RC.settings().publicUrl; $('pwEmail').textContent = user.email; }
     history.replaceState(null, '', `#${v}`);
   }
 
@@ -29,7 +32,8 @@
         <span><b>${RC.esc(b.name || 'Untitled')}</b><small>Threshold ${b.threshold}★ · /${RC.esc(b.slug)}</small></span></button>`;
     }).join('');
     $('emptyState').hidden = list.length > 0;
-    $('bizList').hidden = list.length === 0;
+    // A client with a single business doesn't need the switcher.
+    $('bizList').hidden = list.length === 0 || (!user.isAdmin && list.length === 1);
     $('workspace').hidden = !currentId;
   }
   $('bizList').addEventListener('click', (e) => {
@@ -37,28 +41,32 @@
     if (id && id !== currentId) select(id);
   });
 
-  function select(id) {
+  async function select(id) {
     if (dirty && !confirm('You have unsaved changes. Discard them?')) return;
     currentId = id;
     draft = structuredClone(list.find((b) => b.id === id));
-    draft.whatsapp = draft.whatsapp || ['', ''];
-    draft.social = { ...RC.newBusiness().social, ...(draft.social || {}) };
+    draft.members = '';
     dirty = false;
     fillForm();
     renderList();
     refresh();
+    $('saveStatus').textContent = '';
+    if (user.isAdmin) {
+      try { draft.members = (await RC.listMembers(id)).join('\n'); form.members.value = draft.members; }
+      catch (e) { toast(e.message); }
+    }
   }
 
-  function addBusiness() {
+  async function addBusiness() {
     if (dirty && !confirm('You have unsaved changes. Discard them?')) return;
     dirty = false;
-    const b = RC.newBusiness();
-    b.name = 'New business';
-    b.slug = uniqueSlug('new-business');
-    list.push(b);
-    RC.saveList(list);
-    select(b.id);
-    form.bizName.focus(); form.bizName.select();
+    const b = { ...RC.newBusiness(), name: 'New business', slug: uniqueSlug('new-business') };
+    try {
+      const created = await RC.createBusiness(b);
+      list.push(created);
+      await select(created.id);
+      form.bizName.focus(); form.bizName.select();
+    } catch (e) { toast(friendly(e)); }
   }
   $('addBiz').addEventListener('click', addBusiness);
   $('addBiz2').addEventListener('click', addBusiness);
@@ -82,10 +90,12 @@
   function fillForm() {
     const d = draft;
     form.bizName.value = d.name; form.slug.value = d.slug; form.tagline.value = d.tagline || '';
+    form.slug.readOnly = !user.isAdmin;
     form.from.value = d.theme.from; form.to.value = d.theme.to; form.ink.value = d.theme.ink || '#ffffff'; form.face.value = d.theme.face || '#1e1a17';
     form.googleReviewUrl.value = d.googleReviewUrl || '';
     form.wa0.value = d.whatsapp[0] || ''; form.wa1.value = d.whatsapp[1] || '';
     form.webhookUrl.value = d.webhookUrl || '';
+    form.members.value = d.members || '';
     SOCIAL_KEYS.forEach((k) => (form[`social_${k}`].value = d.social[k] || ''));
     renderLogo(); renderThreshold(); renderSwatches();
   }
@@ -95,7 +105,7 @@
     if (!n || !draft) return;
     const v = e.target.value;
     if (n === 'bizName') {
-      const auto = !draft.slug || draft.slug === RC.slugify(draft.name) || /^new-business(-\d+)?$/.test(draft.slug);
+      const auto = user.isAdmin && (!draft.slug || draft.slug === RC.slugify(draft.name) || /^new-business(-\d+)?$/.test(draft.slug));
       draft.name = v;
       if (auto) { draft.slug = uniqueSlug(RC.slugify(v), draft.id); form.slug.value = draft.slug; }
     } else if (n === 'slug') {
@@ -138,7 +148,7 @@
     $('swatches').querySelectorAll('.sw').forEach((s) => s.classList.toggle('on', s.dataset.k === draft.theme.preset));
   }
 
-  // Logo upload (click or drag & drop)
+  // Logo upload (click or drag & drop). Kept as a data URL until Save, then uploaded to Storage.
   const drop = $('logoDrop');
   $('logoInput').addEventListener('change', (e) => e.target.files[0] && setLogo(e.target.files[0]));
   drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('logoInput').click(); } });
@@ -168,29 +178,51 @@
     refresh();
   }
 
-  form.addEventListener('submit', (e) => {
+  let saving = false;
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (saving) return;
     if (!draft.name.trim()) return toast('Add a business name');
     if (!draft.slug) return toast('Add a page link');
     if (list.some((b) => b.slug === draft.slug && b.id !== draft.id)) return toast('That page link is already used');
-    draft.updatedAt = new Date().toISOString();
-    list = list.map((b) => (b.id === draft.id ? structuredClone(draft) : b));
-    if (!RC.saveList(list)) return toast('Browser storage is full. Try a smaller logo.');
-    dirty = false;
-    $('saveStatus').textContent = 'Saved · remember to publish';
-    renderList();
-    toast('Saved');
+    saving = true;
+    $('saveStatus').textContent = 'Saving…';
+    try {
+      const saved = await RC.saveBusiness(draft);
+      if (user.isAdmin) draft.members = (await RC.setMembers(draft.id, (draft.members || '').split(/[\s,;]+/))).join('\n');
+      list = list.map((b) => (b.id === saved.id ? saved : b));
+      draft = { ...structuredClone(saved), members: draft.members };
+      fillForm();
+      dirty = false;
+      $('saveStatus').textContent = 'Saved · live now';
+      renderList(); refresh();
+      toast('Saved');
+    } catch (err) {
+      $('saveStatus').textContent = 'Not saved';
+      toast(friendly(err));
+    } finally { saving = false; }
   });
 
-  $('deleteBiz').addEventListener('click', () => {
-    if (!confirm(`Delete "${draft.name}"? Printed QR codes for it will stop working once you publish.`)) return;
-    list = list.filter((b) => b.id !== draft.id);
-    RC.saveList(list);
-    dirty = false; currentId = null; draft = null;
-    if (list[0]) select(list[0].id); else renderList();
+  $('deleteBiz').addEventListener('click', async () => {
+    if (!confirm(`Delete "${draft.name}" and all its reviews? Printed QR codes for it will stop working.`)) return;
+    try {
+      await RC.deleteBusiness(draft.id);
+      list = list.filter((b) => b.id !== draft.id);
+      dirty = false; currentId = null; draft = null;
+      if (list[0]) select(list[0].id); else renderList();
+      toast('Deleted');
+    } catch (e) { toast(friendly(e)); }
   });
 
   window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  function friendly(err) {
+    const m = err?.message || String(err);
+    if (/duplicate key|unique/i.test(m)) return 'That page link is already taken';
+    if (/row-level security|permission/i.test(m)) return "You don't have permission to do that";
+    if (/JWT|session/i.test(m)) return 'Your session expired. Please sign in again.';
+    return m;
+  }
 
   // ---------- Preview + QR ----------
   let qrTimer;
@@ -199,19 +231,18 @@
     sendPreview();
     const url = RC.reviewUrl(draft);
     $('pageUrl').value = url;
-    $('openPage').href = url + '&draft=1';
+    $('openPage').href = url;
     const t = draft.theme;
     $('tableCard').style.background = `linear-gradient(160deg, ${t.from}, ${t.to})`;
     $('tableCard').style.color = t.ink;
-    $('tcHead').innerHTML = (draft.logo ? `<img src="${draft.logo}" alt="">` : `<span class="ini">${RC.esc(RC.initials(draft.name))}</span>`) + `<span>${RC.esc(draft.name)}</span>`;
+    $('tcHead').innerHTML = (draft.logo ? `<img src="${RC.esc(draft.logo)}" alt="">` : `<span class="ini">${RC.esc(RC.initials(draft.name))}</span>`) + `<span>${RC.esc(draft.name)}</span>`;
     renderDelivery();
     clearTimeout(qrTimer);
     qrTimer = setTimeout(renderQR, 200);
   }
 
   function sendPreview() {
-    const f = $('preview');
-    if (previewReady) f.contentWindow.postMessage({ type: 'rc-preview', business: draft }, location.origin);
+    if (previewReady) $('preview').contentWindow.postMessage({ type: 'rc-preview', business: draft }, location.origin);
   }
   window.addEventListener('message', (e) => {
     if (e.origin === location.origin && e.data?.type === 'rc-preview-ready') { previewReady = true; sendPreview(); }
@@ -221,7 +252,7 @@
   function renderQR() {
     if (typeof QRCodeStyling === 'undefined') { $('qr').textContent = 'QR library failed to load (check your connection).'; return; }
     const dark = mix(draft.theme.to, '#000000', 0.35);
-    const opts = {
+    qr = new QRCodeStyling({
       width: 600, height: 600, type: 'canvas', margin: 0,
       data: RC.reviewUrl(draft),
       image: draft.logo || undefined,
@@ -231,8 +262,7 @@
       cornersDotOptions: { type: 'dot', color: dark },
       backgroundOptions: { color: '#ffffff' },
       imageOptions: { margin: 8, imageSize: 0.34, hideBackgroundDots: true, crossOrigin: 'anonymous' },
-    };
-    qr = new QRCodeStyling(opts);
+    });
     $('qr').innerHTML = '';
     qr.append($('qr'));
   }
@@ -260,77 +290,74 @@
       n.textContent = `Automatic: feedback and photos are sent to your webhook${wa.length ? `, which should forward them to ${wa.join(' and ')}` : ''}.`;
     } else if (wa.length) {
       n.className = 'note';
-      n.textContent = `Without a webhook, the guest's WhatsApp opens a chat to ${wa[0]} with their message (photos can't be attached this way). Add a webhook to reach both contacts automatically, with photos.`;
+      n.textContent = `Every low rating is saved under Reviews. The guest's WhatsApp also opens a message to ${wa[0]}, which they send. Add a webhook to alert both numbers automatically.`;
     } else {
       n.className = 'note';
-      n.textContent = 'Add a WhatsApp contact or a webhook. Otherwise low ratings are only saved on the guest\'s phone.';
+      n.textContent = 'Low ratings are saved under Reviews. Add a WhatsApp number to also get them on your phone.';
     }
   }
 
-  // ---------- Inbox ----------
-  function seedDemoFeedback() {
-    if (RC.read('rc.demoSeeded', false) || RC.listFeedback().length || !list[0]) return;
-    const slug = list[0].slug;
-    const ago = (h) => new Date(Date.now() - h * 3600e3).toISOString();
-    [
-      { rating: 2, route: 'private', text: 'Waited 40 minutes for our mains and the biryani arrived lukewarm. Staff were friendly though.', guestName: 'Sara', guestPhone: '+966 55 000 0000', createdAt: ago(3) },
-      { rating: 5, route: 'google', text: 'Best karak in Jeddah! Lovely staff.', createdAt: ago(7) },
-      { rating: 1, route: 'private', text: 'Found a hair in the dessert. Not happy.', guestName: '', guestPhone: '', createdAt: ago(26), status: 'resolved' },
-      { rating: 4, route: 'google', text: 'Great food, a bit loud on Friday night.', createdAt: ago(30) },
-    ].forEach((f) => RC.addFeedback({ id: RC.uid(), slug, status: 'new', demo: true, images: [], ...f }));
-    RC.write('rc.demoSeeded', true);
+  // ---------- Reviews ----------
+  async function loadReviews() {
+    $('feed').innerHTML = '<div class="card"><p class="muted">Loading reviews…</p></div>';
+    try {
+      reviews = await RC.listReviews(list.map((b) => b.id));
+      photoLinks = await RC.photoUrls(reviews.flatMap((r) => r.images || []));
+    } catch (e) { toast(friendly(e)); reviews = []; }
+    renderInbox();
   }
 
   function renderInbox() {
-    const all = RC.listFeedback();
     const fb = $('fBiz');
     const cur = fb.value || 'all';
-    fb.innerHTML = `<option value="all">All businesses</option>` + list.map((b) => `<option value="${RC.esc(b.slug)}">${RC.esc(b.name)}</option>`).join('');
-    fb.value = list.some((b) => b.slug === cur) ? cur : 'all';
+    fb.innerHTML = `<option value="all">All businesses</option>` + list.map((b) => `<option value="${b.id}">${RC.esc(b.name)}</option>`).join('');
+    fb.value = list.some((b) => b.id === cur) ? cur : 'all';
+    fb.hidden = list.length < 2;
 
-    const scoped = all.filter((f) => fb.value === 'all' || f.slug === fb.value);
-    const priv = scoped.filter((f) => f.route === 'private');
-    const avg = scoped.length ? (scoped.reduce((s, f) => s + f.rating, 0) / scoped.length).toFixed(1) : '–';
+    const scoped = reviews.filter((r) => fb.value === 'all' || r.business_id === fb.value);
+    const priv = scoped.filter((r) => r.route === 'private');
+    const avg = scoped.length ? (scoped.reduce((s, r) => s + r.rating, 0) / scoped.length).toFixed(1) : '–';
     $('stats').innerHTML = [
       [scoped.length, 'Total ratings'],
       [scoped.length - priv.length, 'Sent to Google'],
-      [priv.filter((f) => f.status !== 'resolved').length, 'Open private feedback'],
+      [priv.filter((r) => r.status !== 'resolved').length, 'Open private feedback'],
       [avg, 'Average rating'],
     ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
 
-    const shown = $('fRoute').value === 'all' ? scoped : priv;
-    const name = (slug) => list.find((b) => b.slug === slug)?.name || slug;
-    $('feed').innerHTML = shown.length ? shown.map((f) => `
-      <article class="fb ${f.status === 'resolved' ? 'resolved' : ''}">
+    const route = $('fRoute').value;
+    const shown = route === 'all' ? scoped : scoped.filter((r) => r.route === route);
+    const name = (id) => list.find((b) => b.id === id)?.name || '';
+    $('feed').innerHTML = shown.length ? shown.map((r) => `
+      <article class="fb ${r.status === 'resolved' ? 'resolved' : ''}">
         <div class="fb-top">
-          <span class="dots" aria-label="${f.rating} out of 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= f.rating ? 'on' : ''}"></i>`).join('')}</span>
-          <b>${RC.esc(name(f.slug))}</b>
-          <span class="tag ${f.route === 'private' ? 'priv' : 'pub'}">${f.route === 'private' ? 'Private' : 'Google'}</span>
-          ${f.status === 'resolved' ? '<span class="tag">Resolved</span>' : ''}
-          ${f.demo ? '<span class="tag demo">Demo</span>' : ''}
-          <time>${new Date(f.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</time>
+          <span class="dots" aria-label="${r.rating} out of 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= r.rating ? 'on' : ''}"></i>`).join('')}</span>
+          <b>${RC.esc(name(r.business_id))}</b>
+          <span class="tag ${r.route === 'private' ? 'priv' : 'pub'}">${r.route === 'private' ? 'Private' : 'Google'}</span>
+          ${r.status === 'resolved' ? '<span class="tag">Resolved</span>' : ''}
+          <time>${new Date(r.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</time>
         </div>
-        ${f.text ? `<p>${RC.esc(f.text)}</p>` : '<p class="muted">No comment</p>'}
-        ${f.images?.length ? `<div class="fb-imgs">${f.images.map((s) => `<img src="${s}" alt="Guest photo">`).join('')}</div>` : ''}
-        ${f.route === 'private' ? `<div class="fb-foot">
-          <span class="who">${RC.esc(f.guestName || 'Anonymous')}${f.guestPhone ? ' · ' + RC.esc(f.guestPhone) : ''}</span>
-          ${f.guestPhone ? `<a class="btn" target="_blank" rel="noopener" href="${RC.waLink(f.guestPhone, `Hi ${f.guestName || ''}, this is ${name(f.slug)}. Thank you for your feedback, we're sorry about your visit.`)}">Reply on WhatsApp</a>` : ''}
-          <button class="btn" data-toggle="${f.id}">${f.status === 'resolved' ? 'Reopen' : 'Mark resolved'}</button>
+        ${r.text ? `<p>${RC.esc(r.text)}</p>` : '<p class="muted">No comment</p>'}
+        ${r.images?.length ? `<div class="fb-imgs">${r.images.map((p) => photoLinks[p] ? `<img src="${RC.esc(photoLinks[p])}" alt="Guest photo">` : '').join('')}</div>` : ''}
+        ${r.route === 'private' ? `<div class="fb-foot">
+          <span class="who-line">${RC.esc(r.guest_name || 'Anonymous')}${r.guest_phone ? ' · ' + RC.esc(r.guest_phone) : ''}</span>
+          ${r.guest_phone ? `<a class="btn" target="_blank" rel="noopener" href="${RC.waLink(r.guest_phone, `Hi ${r.guest_name || ''}, this is ${name(r.business_id)}. Thank you for your feedback, we're sorry about your visit.`)}">Reply on WhatsApp</a>` : ''}
+          <button class="btn" data-toggle="${r.id}">${r.status === 'resolved' ? 'Reopen' : 'Mark resolved'}</button>
         </div>` : ''}
       </article>`).join('')
-      : `<div class="card empty"><h2>Nothing here yet</h2><p class="muted">Private feedback will appear here.</p></div>`;
+      : `<div class="card empty"><h2>Nothing here yet</h2><p class="muted">Ratings from your QR code will appear here.</p></div>`;
 
-    const open = all.filter((f) => f.route === 'private' && f.status !== 'resolved').length;
+    const open = reviews.filter((r) => r.route === 'private' && r.status !== 'resolved').length;
     $('inboxCount').hidden = !open; $('inboxCount').textContent = open;
   }
   $('fBiz').addEventListener('change', renderInbox);
   $('fRoute').addEventListener('change', renderInbox);
-  $('feed').addEventListener('click', (e) => {
+  $('feed').addEventListener('click', async (e) => {
     const id = e.target.dataset?.toggle;
     if (id) {
-      const f = RC.listFeedback().find((x) => x.id === id);
-      RC.updateFeedback(id, { status: f.status === 'resolved' ? 'new' : 'resolved' });
-      renderInbox();
+      const r = reviews.find((x) => x.id === id);
+      const status = r.status === 'resolved' ? 'new' : 'resolved';
+      try { await RC.updateReview(id, { status }); r.status = status; renderInbox(); }
+      catch (err) { toast(friendly(err)); }
     }
     if (e.target.matches('.fb-imgs img')) {
       const lb = document.createElement('div');
@@ -339,7 +366,12 @@
     }
   });
 
-  // ---------- Publish ----------
+  // ---------- Settings ----------
+  $('pwForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try { await RC.updatePassword($('newPw').value); $('newPw').value = ''; toast('Password updated'); }
+    catch (err) { toast(friendly(err)); }
+  });
   $('savePublic').addEventListener('click', () => {
     const raw = $('publicUrl').value.trim();
     const v = raw ? RC.siteBase(raw) : '';
@@ -349,48 +381,76 @@
     toast('Saved. QR codes now use this address');
     refresh();
   });
-  $('exportJson').addEventListener('click', () => {
-    if (dirty) toast('Note: you have unsaved changes that are not in this file');
-    const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
-    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'businesses.json' });
-    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  });
+  async function runImport(arr) {
+    if (!Array.isArray(arr) || !arr.length) return toast('No businesses found to import');
+    if (!confirm(`Import ${arr.length} business(es) into the database?`)) return;
+    try {
+      const n = await RC.importBusinesses(arr);
+      list = await RC.listBusinesses(user);
+      currentId = null; dirty = false;
+      if (list[0]) await select(list[0].id); else renderList();
+      toast(`Imported ${n} business(es)`);
+    } catch (e) { toast(friendly(e)); }
+  }
+  $('importLive').addEventListener('click', async () => runImport(await RC.fetchPublished()));
   $('importJson').addEventListener('change', async (e) => {
     const file = e.target.files[0]; if (!file) return;
     try {
       const data = JSON.parse(await file.text());
-      const arr = Array.isArray(data) ? data : data.businesses;
-      if (!Array.isArray(arr)) throw new Error();
-      if (!confirm(`Replace your ${list.length} business(es) with ${arr.length} from the file?`)) return;
-      list = arr; RC.saveList(list); dirty = false; currentId = null;
-      list[0] ? select(list[0].id) : renderList();
-      toast('Imported');
+      await runImport(Array.isArray(data) ? data : data.businesses);
     } catch { toast("That file isn't a valid businesses.json"); }
     e.target.value = '';
   });
-  $('reloadPublished').addEventListener('click', async () => {
-    const pub = await RC.fetchPublished();
-    if (!confirm(`Replace what's in this browser with the ${pub.length} business(es) on the live site?`)) return;
-    list = pub; RC.saveList(list); dirty = false; currentId = null;
-    list[0] ? select(list[0].id) : renderList();
-    toast('Reloaded from live site');
+
+  $('signOut').addEventListener('click', async () => {
+    if (dirty && !confirm('You have unsaved changes. Sign out anyway?')) return;
+    dirty = false;
+    await RC.signOut();
+    location.replace('login.html');
   });
 
   let toastTimer;
   function toast(msg) {
     const t = $('toast'); t.textContent = msg; t.hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 2600);
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 3200);
+  }
+
+  function gate(html) {
+    $('gateMsg').innerHTML = html;
+    $('gateMsg').hidden = false;
   }
 
   // ---------- Boot ----------
   (async () => {
+    if (!RC.configured) {
+      return gate(`<h2>Connect the database</h2><p>Review Finder needs its Supabase details. Add the Project URL and anon key to <code>assets/config.js</code>, then reload.</p>`);
+    }
+    try { user = await RC.me(); } catch { user = null; }
+    if (!user) { location.replace('login.html'); return; }
+
+    document.body.classList.toggle('is-admin', user.isAdmin);
+    $('whoEmail').textContent = user.email;
+    $('whoRole').textContent = user.isAdmin ? 'H&H admin' : 'Business owner';
+    $('whoAv').textContent = user.email[0].toUpperCase();
+    if (!user.isAdmin) {
+      $('tabBizLabel').textContent = 'My business';
+      $('bizTitle').textContent = 'My business';
+      $('bizSub').textContent = 'Customise your review page and download your QR code.';
+      $('emptyTitle').textContent = 'No business linked yet';
+      $('emptyText').textContent = 'Your login is not linked to a business yet. Please contact H&H Technology.';
+    }
+
     buildStaticControls();
-    list = await RC.adminList();
+    try { list = await RC.listBusinesses(user); } catch (e) { toast(friendly(e)); }
     $('preview').src = 'review.html?preview=1';
-    seedDemoFeedback();
-    if (list[0]) select(list[0].id); else renderList();
-    renderInbox();
+    if (list[0]) await select(list[0].id); else renderList();
+    document.body.classList.remove('loading');
+
     const v = location.hash.slice(1);
-    if (['businesses', 'inbox', 'publish'].includes(v)) showView(v);
+    if (['businesses', 'inbox', 'settings'].includes(v)) showView(v);
+    // Load counts for the badge in the background.
+    RC.listReviews(list.map((b) => b.id)).then((r) => { reviews = r; renderInbox(); }).catch(() => {});
+
+    RC.sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') location.replace('login.html'); });
   })();
 })();

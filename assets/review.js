@@ -148,15 +148,7 @@
   $('cta').addEventListener('click', async () => {
     if (!rating || !biz) return;
     const text = $('text').value.trim();
-    const item = {
-      id: RC.uid(),
-      slug: biz.slug,
-      rating,
-      route: isPublic() ? 'google' : 'private',
-      text,
-      createdAt: new Date().toISOString(),
-      status: 'new',
-    };
+    const item = { rating, route: isPublic() ? 'google' : 'private', text };
 
     if (isPublic()) {
       let copied = false;
@@ -165,36 +157,41 @@
       $('sheetStars').textContent = `${rating} star${rating > 1 ? 's' : ''}`;
       $('toGoogle').href = RC.googleLink(biz) || '#';
       $('sheet').hidden = false;
-      if (!isPreview) { RC.addFeedback(item); RC.deliver(biz, item); }
+      if (!isPreview) {
+        RC.submitReview(biz, item).then(({ review }) => RC.deliver(biz, { ...review, slug: biz.slug }));
+      }
       return;
     }
 
     if (!text && !photos.length) { toast('Please tell us a little about what happened'); $('text').focus(); return; }
-    Object.assign(item, { images: photos, guestName: $('guestName').value.trim(), guestPhone: $('guestPhone').value.trim() });
-
+    Object.assign(item, { guestName: $('guestName').value.trim(), guestPhone: $('guestPhone').value.trim() });
     if (isPreview) { toast('Preview only, nothing was sent'); return; }
-    RC.addFeedback(item);
-
-    // No webhook → open a WhatsApp chat to the owner with the message typed out (text only).
-    // Must happen synchronously inside the tap, or phones block it as a pop-up.
-    const owner = (biz.whatsapp || []).find(Boolean);
-    if (!biz.webhookUrl && owner) {
-      const msg = `LOW RATING ${rating}/5 - feedback for ${biz.name}\n\n${text || '(no comment)'}` +
-        (item.guestName || item.guestPhone ? `\n\nFrom: ${[item.guestName, item.guestPhone].filter(Boolean).join(' · ')}` : '') +
-        (photos.length ? `\n\n(${photos.length} photo${photos.length > 1 ? 's' : ''} attached on the review page)` : '');
-      const url = RC.waLink(owner, msg);
-      $('waRetry').href = url;
-      $('waRetry').hidden = false;
-      location.href = url; // opens the WhatsApp app on phones
-      showDone('private');
-      return;
-    }
 
     const cta = $('cta');
     cta.classList.add('busy'); cta.textContent = 'Sending…';
-    await RC.deliver(biz, item);
-    cta.classList.remove('busy');
-    cta.textContent = 'Send';
+    const res = await RC.submitReview(biz, item, photos);
+    await RC.deliver(biz, { ...res.review, slug: biz.slug, photos: photos.length ? photos : undefined });
+    cta.classList.remove('busy'); cta.textContent = 'Send';
+
+    // Alert the owner on WhatsApp (text only; photos are in their dashboard).
+    const owner = (biz.whatsapp || []).find(Boolean);
+    if (!biz.webhookUrl && owner) {
+      const msg = `LOW RATING ${rating}/5 - feedback for ${biz.name}
+
+${text || '(no comment)'}` +
+        (item.guestName || item.guestPhone ? `
+
+From: ${[item.guestName, item.guestPhone].filter(Boolean).join(' · ')}` : '') +
+        (photos.length ? `
+
+${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review Finder dashboard.` : '');
+      const url = RC.waLink(owner, msg);
+      $('waRetry').href = url;
+      $('waRetry').hidden = false;
+      showDone('private');
+      location.href = url; // opens WhatsApp on phones
+      return;
+    }
     showDone('private');
   });
 
@@ -266,7 +263,7 @@
   (async () => {
     // Tolerate mangled links like "?b=test/review.html?b=test" from older QR codes.
     const slug = (params.get('b') || '').split(/[/?#&]/)[0].trim().toLowerCase();
-    const b = slug ? await RC.getBusiness(slug, params.has('draft')) : null;
+    const b = slug ? await RC.getBusiness(slug) : null;
     if (b) { applyBusiness(b); $('rate').hidden = false; }
     else if (!isPreview) $('missing').hidden = false;
     if (isPreview) parent.postMessage({ type: 'rc-preview-ready' }, location.origin);
