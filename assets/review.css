@@ -207,3 +207,27 @@ textarea:focus, input:focus { border-color: var(--ink); background: color-mix(in
 .mgmt b { color: #1b1b1f; font-size: 15px; }
 .sheet .cta.outline { border: 2px solid var(--to); color: var(--to); background: #fff; }
 .done .link-g { color: var(--ink); }
+
+/* ---------- Language toggle + Arabic / RTL ---------- */
+.top-actions { display: flex; align-items: center; gap: 4px; flex: none; }
+.lang {
+  border: 1.5px solid color-mix(in srgb, var(--ink) 45%, transparent); background: color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 999px; padding: 5px 12px; cursor: pointer; font-size: 13px; font-weight: 700; line-height: 1.3;
+}
+.lang:hover { background: color-mix(in srgb, var(--ink) 22%, transparent); }
+.lang[lang="ar"] { font-family: 'Noto Sans Arabic', sans-serif; }
+.lang[lang="en"] { font-family: Urbanist, Arial, sans-serif; }
+#missing .lang { justify-self: center; margin-bottom: 8px; }
+
+html[lang="ar"] body { font-family: 'Noto Sans Arabic', Urbanist, Arial, sans-serif; }
+html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] .mood, html[lang="ar"] .cta, html[lang="ar"] .biz-name {
+  font-family: 'Noto Kufi Arabic', 'Noto Sans Arabic', Urbanist, sans-serif;
+}
+/* Letter-spacing breaks Arabic letter joining */
+html[lang="ar"] * { letter-spacing: 0 !important; }
+html[lang="ar"] .intro h1 { line-height: 1.35; font-size: clamp(26px, 7.2vw, 31px); }
+html[lang="ar"] .skip { text-transform: none; font-size: 13px; }
+
+/* Logical properties so the layout mirrors in Arabic */
+.thumb button { right: auto; inset-inline-end: 2px; }
+.steps { padding-left: 0; padding-inline-start: 22px; }

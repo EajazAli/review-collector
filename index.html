@@ -11,7 +11,9 @@
   <link rel="icon" type="image/png" href="assets/brand/HH_Icon_Navy.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="assets/i18n.js"></script>
+  <script src="assets/i18n-landing.js"></script>
   <style>
     :root {
       --ink: #000212; --panel: #0A0D21; --panel-2: #0F1330; --line: rgba(255,255,255,.08); --line-2: rgba(255,255,255,.14);
@@ -258,6 +260,26 @@
     .foot-base { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
     @media (max-width: 760px) { .foot { grid-template-columns: 1fr; gap: 28px; } }
 
+    /* Language toggle + Arabic / RTL */
+    .lang-btn { background: transparent; cursor: pointer; font-weight: 600; }
+    .lang-btn:hover { background: rgba(255,255,255,.06); }
+    .lang-btn[lang="ar"] { font-family: 'Noto Sans Arabic', sans-serif; }
+    .lang-btn[lang="en"] { font-family: Urbanist, Arial, sans-serif; }
+    html[lang="ar"] body { font-family: 'Noto Sans Arabic', Urbanist, Arial, sans-serif; }
+    html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] h3, html[lang="ar"] summary, html[lang="ar"] .s-title, html[lang="ar"] .amount .per, html[lang="ar"] .hub-circle small {
+      font-family: 'Noto Kufi Arabic', 'Noto Sans Arabic', Urbanist, sans-serif;
+    }
+    html[lang="ar"] * { letter-spacing: 0 !important; }
+    html[lang="ar"] h1 { line-height: 1.3; font-size: clamp(34px, 5.4vw, 60px); }
+    html[lang="ar"] h2 { line-height: 1.35; }
+    html[lang="ar"] .kicker, html[lang="ar"] .foot h4, html[lang="ar"] .price-side h3 { text-transform: none; font-size: 14px; }
+    html[dir="rtl"] .nav-links { margin-left: 0; margin-right: auto; }
+    html[dir="rtl"] .flip-rtl { transform: scaleX(-1); }
+    html[dir="rtl"] .eyebrow { padding: 7px 8px 7px 14px; }
+    html[dir="rtl"] .s-skip { margin-left: 0; margin-right: auto; }
+    .amount, .s-dots { direction: ltr; }
+    html[dir="rtl"] .amount { direction: rtl; }
+
     /* Reveal */
     .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1); }
     .reveal.in { opacity: 1; transform: none; }
@@ -283,15 +305,16 @@
     <div class="wrap">
       <a href="#top" aria-label="Review Finder home"><img class="logo" src="assets/brand/HH_Logo_Primary_Reverse_White.png" alt="H&amp;H Technology" /></a>
       <nav class="nav-links" aria-label="Sections">
-        <a href="#how">How it works</a>
-        <a href="#features">Features</a>
-        <a href="#rules">Google rules</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#faq">FAQ</a>
+        <a href="#how"><span data-i18n-html="lp.1">How it works</span></a>
+        <a href="#features"><span data-i18n-html="lp.2">Features</span></a>
+        <a href="#rules"><span data-i18n-html="lp.3">Google rules</span></a>
+        <a href="#pricing"><span data-i18n-html="lp.4">Pricing</span></a>
+        <a href="#faq"><span data-i18n-html="lp.5">FAQ</span></a>
       </nav>
       <div class="nav-cta">
-        <a class="btn btn-ghost btn-sm" href="login.html"><svg><use href="#i-lock"/></svg>Login</a>
-        <a class="btn btn-primary btn-sm wa-link" href="#">Get started</a>
+        <button class="btn btn-ghost btn-sm lang-btn" type="button" data-lang-toggle>العربية</button>
+        <a class="btn btn-ghost btn-sm" href="login.html"><svg><use href="#i-lock"/></svg><span data-i18n-html="lp.6">Login</span></a>
+        <a class="btn btn-primary btn-sm wa-link" href="#"><span data-i18n-html="lp.7">Get started</span></a>
       </div>
     </div>
   </header>
@@ -301,33 +324,33 @@
     <section class="hero">
       <div class="wrap">
         <div class="reveal">
-          <span class="eyebrow"><span class="g"><svg><use href="#i-g"/></svg></span>Review Finder · Built for Google Reviews</span>
-          <h1>Turn every table into a <em>5-star</em> review.</h1>
-          <p class="lede">Guests scan a QR code and rate their visit in seconds. Happy guests are guided to post on Google. Unhappy guests reach the owner privately on WhatsApp, so you can make it right before they leave.</p>
+          <span class="eyebrow"><span class="g"><svg><use href="#i-g"/></svg></span><span data-i18n-html="lp.8">Review Finder · Built for Google Reviews</span></span>
+          <h1><span data-i18n-html="lp.9">Turn every table into a <em>5-star</em> review.</span></h1>
+          <p class="lede"><span data-i18n-html="lp.10">Guests scan a QR code and rate their visit in seconds. Happy guests are guided to post on Google. Unhappy guests reach the owner privately on WhatsApp, so you can make it right before they leave.</span></p>
           <div class="hero-cta">
-            <a class="btn btn-primary wa-link" href="#"><svg><use href="#i-wa"/></svg>Book a demo on WhatsApp</a>
-            <a class="btn btn-ghost" href="review.html?b=test" target="_blank" rel="noopener">Try the guest page<svg><use href="#i-arrow"/></svg></a>
+            <a class="btn btn-primary wa-link" href="#"><svg><use href="#i-wa"/></svg><span data-i18n-html="lp.11">Book a demo on WhatsApp</span></a>
+            <a class="btn btn-ghost" href="review.html?b=test" target="_blank" rel="noopener"><span data-i18n-html="lp.12">Try the guest page</span><svg class="flip-rtl"><use href="#i-arrow"/></svg></a>
           </div>
           <div class="hero-note">
-            <span><svg><use href="#i-check"/></svg>No app for guests</span>
-            <span><svg><use href="#i-check"/></svg>Unlimited tables</span>
-            <span><svg><use href="#i-check"/></svg>Set up in a day</span>
+            <span><svg><use href="#i-check"/></svg><span data-i18n-html="lp.13">No app for guests</span></span>
+            <span><svg><use href="#i-check"/></svg><span data-i18n-html="lp.14">Unlimited tables</span></span>
+            <span><svg><use href="#i-check"/></svg><span data-i18n-html="lp.15">Set up in a day</span></span>
           </div>
         </div>
 
         <div class="stage reveal" aria-label="Animated preview of the guest review page">
           <div class="float f-route" id="fRoute"><span class="tag pub" id="routeTag">4★ and up → Google</span></div>
           <div class="float f-google" id="fGoogle">
-            <div class="row"><span class="ic"><svg><use href="#i-g"/></svg></span><span><b>Posted to Google</b><small>“Best karak in Jeddah!” ★★★★★</small></span></div>
+            <div class="row"><span class="ic"><svg><use href="#i-g"/></svg></span><span><b><span data-i18n-html="lp.16">Posted to Google</span></b><small><span data-i18n-html="lp.17">“Best karak in Jeddah!” ★★★★★</span></small></span></div>
           </div>
           <div class="phone">
             <div class="screen" id="demo">
               <span class="notch"></span>
               <span class="bubble" style="width:180px;height:180px;right:-70px;top:-60px"></span>
               <span class="bubble" style="width:80px;height:80px;left:-30px;bottom:30%"></span>
-              <div class="s-top"><span class="s-logo">YR</span>Your Restaurant<span class="s-skip">SKIP</span></div>
-              <div class="s-title">Please rate your<br />experience</div>
-              <div class="s-sub">Your feedback matters!</div>
+              <div class="s-top"><span class="s-logo">YR</span><span data-i18n-html="lp.20">Your Restaurant</span><span class="s-skip"><span data-i18n-html="lp.21">SKIP</span></span></div>
+              <div class="s-title"><span data-i18n-html="lp.22">Please rate your<br />experience</span></div>
+              <div class="s-sub"><span data-i18n-html="lp.23">Your feedback matters!</span></div>
               <div class="s-face">
                 <svg viewBox="0 0 200 150" aria-hidden="true">
                   <path class="brow" id="dBrowL" d="M44 34 L80 34" />
@@ -342,11 +365,11 @@
               <div class="s-mood" id="dMood">Loved it!</div>
               <div class="s-dots" id="dDots"><i></i><i></i><i></i><i></i><i></i></div>
               <div class="s-btn" id="dBtn">Send</div>
-              <div class="s-foot">Review Finder by H&amp;H Technology</div>
+              <div class="s-foot"><span data-i18n-html="lp.24">Review Finder by H&amp;H Technology</span></div>
             </div>
           </div>
           <div class="float f-wa" id="fWa">
-            <div class="row"><span class="ic"><svg><use href="#i-wa"/></svg></span><span><b>Sent to the owner</b><small>“Our food arrived cold.” 2/5 · with photo</small></span></div>
+            <div class="row"><span class="ic"><svg><use href="#i-wa"/></svg></span><span><b><span data-i18n-html="lp.18">Sent to the owner</span></b><small><span data-i18n-html="lp.19">“Our food arrived cold.” 2/5 · with photo</span></small></span></div>
           </div>
         </div>
       </div>
@@ -356,9 +379,9 @@
     <section class="sec" id="how">
       <div class="wrap">
         <div class="sec-head reveal">
-          <span class="kicker">How it works</span>
-          <h2>Three taps for the guest.<br /><em>Zero effort</em> for your team.</h2>
-          <p>A QR code on every table does the asking for you, at the moment the experience is fresh.</p>
+          <span class="kicker"><span data-i18n-html="lp.1">How it works</span></span>
+          <h2><span data-i18n-html="lp.25">Three taps for the guest.<br /><em>Zero effort</em> for your team.</span></h2>
+          <p><span data-i18n-html="lp.26">A QR code on every table does the asking for you, at the moment the experience is fresh.</span></p>
         </div>
         <div class="steps">
           <article class="step reveal">
@@ -372,14 +395,14 @@
               <i></i><i></i><i></i><i></i><i class="o"></i><i></i><i></i>
             </div></div>
             <span class="num">01</span>
-            <h3>Scan</h3>
-            <p>A branded QR code with your logo and colours on every table, receipt or menu. Print as many as you like.</p>
+            <h3><span data-i18n-html="lp.27">Scan</span></h3>
+            <p><span data-i18n-html="lp.28">A branded QR code with your logo and colours on every table, receipt or menu. Print as many as you like.</span></p>
           </article>
           <article class="step reveal">
             <div class="art"><div class="art-dots" aria-hidden="true"><i class="on">1</i><i class="on">2</i><i class="on">3</i><i class="on">4</i><i class="on">5</i></div></div>
             <span class="num">02</span>
-            <h3>Rate</h3>
-            <p>A friendly face reacts as guests choose a rating. No app to download, no account to create.</p>
+            <h3><span data-i18n-html="lp.29">Rate</span></h3>
+            <p><span data-i18n-html="lp.30">A friendly face reacts as guests choose a rating. No app to download, no account to create.</span></p>
           </article>
           <article class="step reveal">
             <div class="art"><div class="art-split" aria-hidden="true">
@@ -387,8 +410,8 @@
               <div><svg style="color:#25D366"><use href="#i-wa"/></svg>2★ → Owner on WhatsApp</div>
             </div></div>
             <span class="num">03</span>
-            <h3>Route</h3>
-            <p>Great ratings go to Google. Lower ratings come to you privately, with photos, so you can respond fast.</p>
+            <h3><span data-i18n-html="lp.31">Route</span></h3>
+            <p><span data-i18n-html="lp.32">Great ratings go to Google. Lower ratings come to you privately, with photos, so you can respond fast.</span></p>
           </article>
         </div>
       </div>
@@ -398,38 +421,38 @@
     <section class="sec" style="padding-top:0">
       <div class="wrap">
         <div class="sec-head reveal">
-          <span class="kicker">Your threshold, your rules</span>
-          <h2>Every guest is heard.<br />The <em>right way</em>.</h2>
-          <p>You choose the rating that sends guests to Google. Every guest can still post on Google whenever they like.</p>
+          <span class="kicker"><span data-i18n-html="lp.33">Your threshold, your rules</span></span>
+          <h2><span data-i18n-html="lp.34">Every guest is heard.<br />The <em>right way</em>.</span></h2>
+          <p><span data-i18n-html="lp.35">You choose the rating that sends guests to Google. Every guest can still post on Google whenever they like.</span></p>
         </div>
         <div class="route reveal">
           <div class="lane priv">
-            <span class="badge">Below threshold</span>
-            <h3>A private second chance</h3>
-            <p>The guest's message goes straight to the owner, not the internet.</p>
+            <span class="badge"><span data-i18n-html="lp.36">Below threshold</span></span>
+            <h3><span data-i18n-html="lp.37">A private second chance</span></h3>
+            <p><span data-i18n-html="lp.38">The guest's message goes straight to the owner, not the internet.</span></p>
             <ul>
-              <li><svg><use href="#i-check"/></svg>Instant alert to up to two WhatsApp numbers</li>
-              <li><svg><use href="#i-check"/></svg>Guests can attach photos as evidence</li>
-              <li><svg><use href="#i-check"/></svg>Reply to the guest on WhatsApp in one tap</li>
-              <li><svg><use href="#i-check"/></svg>Track and resolve every issue in your dashboard</li>
-              <li><svg><use href="#i-check"/></svg>A "Post it to Google" option is always one tap away</li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.39">Instant alert to up to two WhatsApp numbers</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.40">Guests can attach photos as evidence</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.41">Reply to the guest on WhatsApp in one tap</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.42">Track and resolve every issue in your dashboard</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.43">A "Post it to Google" option is always one tap away</span></li>
             </ul>
           </div>
           <div class="hub">
             <div class="hub-in">
-              <div class="hub-circle"><div><b>4★</b><small>THRESHOLD</small></div></div>
-              <span>Set from 1★ to 5★</span>
+              <div class="hub-circle"><div><b>4★</b><small><span data-i18n-html="lp.44">THRESHOLD</span></small></div></div>
+              <span><span data-i18n-html="lp.45">Set from 1★ to 5★</span></span>
             </div>
           </div>
           <div class="lane pub">
-            <span class="badge">At or above threshold</span>
-            <h3>Straight to Google</h3>
-            <p>Happy guests are guided to your Google review page while they're still smiling.</p>
+            <span class="badge"><span data-i18n-html="lp.46">At or above threshold</span></span>
+            <h3><span data-i18n-html="lp.47">Straight to Google</span></h3>
+            <p><span data-i18n-html="lp.48">Happy guests are guided to your Google review page while they're still smiling.</span></p>
             <ul>
-              <li><svg><use href="#i-check"/></svg>Their comment is copied for them, ready to paste</li>
-              <li><svg><use href="#i-check"/></svg>Opens your Google review form directly</li>
-              <li><svg><use href="#i-check"/></svg>More recent reviews lift your Maps ranking</li>
-              <li><svg><use href="#i-check"/></svg>Thank-you screen promotes your social channels</li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.49">Their comment is copied for them, ready to paste</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.50">Opens your Google review form directly</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.51">More recent reviews lift your Maps ranking</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.52">Thank-you screen promotes your social channels</span></li>
             </ul>
           </div>
         </div>
@@ -440,18 +463,18 @@
     <section class="sec" id="features" style="padding-top:0">
       <div class="wrap">
         <div class="sec-head reveal">
-          <span class="kicker">Features</span>
-          <h2>Everything a restaurant needs.<br /><em>Nothing</em> it doesn't.</h2>
+          <span class="kicker"><span data-i18n-html="lp.2">Features</span></span>
+          <h2><span data-i18n-html="lp.53">Everything a restaurant needs.<br /><em>Nothing</em> it doesn't.</span></h2>
         </div>
         <div class="features">
-          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg></span><h3>Branded QR codes</h3><p>Your logo in the centre, your colours on the code. Download PNG or SVG, or print table cards.</p></article>
-          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="15.5" r="2.5"/><path d="M12 22a10 10 0 1 1 10-10c0 2-1.5 3-3 3h-2a2 2 0 0 0-1 3.7A2 2 0 0 1 12 22z"/></svg></span><h3>Your look and feel</h3><p>Theme colours, logo and message on the review page, so it feels like your restaurant.</p></article>
-          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><h3>Adjustable threshold</h3><p>Decide which ratings go to Google, from 1★ to 5★. Change it whenever you like.</p></article>
-          <article class="feat reveal"><span class="ic"><svg><use href="#i-wa"/></svg></span><h3>WhatsApp alerts</h3><p>Low ratings land on your phone straight away, for the owner and a manager.</p></article>
-          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><h3>Photo evidence</h3><p>Guests can attach up to four photos, so you see exactly what went wrong.</p></article>
-          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5"/></svg></span><h3>Review inbox</h3><p>Every rating in one place, with averages, open issues and one-tap resolve.</p></article>
-          <article class="feat reveal"><span class="ic"><svg><use href="#i-lock"/></svg></span><h3>Private owner login</h3><p>Each restaurant gets its own secure login. Your data is never visible to anyone else.</p></article>
-          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg></span><h3>Built for phones</h3><p>Fast on any phone, no download. Guests are done in under a minute.</p></article>
+          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg></span><h3><span data-i18n-html="lp.54">Branded QR codes</span></h3><p><span data-i18n-html="lp.55">Your logo in the centre, your colours on the code. Download PNG or SVG, or print table cards.</span></p></article>
+          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="15.5" r="2.5"/><path d="M12 22a10 10 0 1 1 10-10c0 2-1.5 3-3 3h-2a2 2 0 0 0-1 3.7A2 2 0 0 1 12 22z"/></svg></span><h3><span data-i18n-html="lp.56">Your look and feel</span></h3><p><span data-i18n-html="lp.57">Theme colours, logo and message on the review page, so it feels like your restaurant.</span></p></article>
+          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span><h3><span data-i18n-html="lp.58">Adjustable threshold</span></h3><p><span data-i18n-html="lp.59">Decide which ratings go to Google, from 1★ to 5★. Change it whenever you like.</span></p></article>
+          <article class="feat reveal"><span class="ic"><svg><use href="#i-wa"/></svg></span><h3><span data-i18n-html="lp.60">WhatsApp alerts</span></h3><p><span data-i18n-html="lp.61">Low ratings land on your phone straight away, for the owner and a manager.</span></p></article>
+          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><h3><span data-i18n-html="lp.62">Photo evidence</span></h3><p><span data-i18n-html="lp.63">Guests can attach up to four photos, so you see exactly what went wrong.</span></p></article>
+          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5"/></svg></span><h3><span data-i18n-html="lp.64">Review inbox</span></h3><p><span data-i18n-html="lp.65">Every rating in one place, with averages, open issues and one-tap resolve.</span></p></article>
+          <article class="feat reveal"><span class="ic"><svg><use href="#i-lock"/></svg></span><h3><span data-i18n-html="lp.66">Private owner login</span></h3><p><span data-i18n-html="lp.67">Each restaurant gets its own secure login. Your data is never visible to anyone else.</span></p></article>
+          <article class="feat reveal"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg></span><h3><span data-i18n-html="lp.68">Built for phones</span></h3><p><span data-i18n-html="lp.69">Fast on any phone, no download. Guests are done in under a minute.</span></p></article>
         </div>
       </div>
     </section>
@@ -463,20 +486,20 @@
           <div class="rules-head">
             <span class="g"><svg><use href="#i-g"/></svg></span>
             <div>
-              <span class="kicker">Google review rules</span>
-              <h2>Built to play by <em>Google's rules</em>.</h2>
-              <p>Google wants reviews that are genuine, unpaid and open to every customer. Review Finder is designed around that.</p>
+              <span class="kicker"><span data-i18n-html="lp.70">Google review rules</span></span>
+              <h2><span data-i18n-html="lp.71">Built to play by <em>Google's rules</em>.</span></h2>
+              <p><span data-i18n-html="lp.72">Google wants reviews that are genuine, unpaid and open to every customer. Review Finder is designed around that.</span></p>
             </div>
           </div>
           <div class="rules-grid">
-            <div class="rule ok"><b><svg><use href="#i-check"/></svg>Every guest can post on Google</b><span>Guests with a low rating see a "Post it to Google" option, with a second screen offering a direct line to the management as well.</span></div>
-            <div class="rule ok"><b><svg><use href="#i-check"/></svg>Guests write their own words</b><span>We only copy what the guest typed. Nothing is written, edited or posted for them.</span></div>
-            <div class="rule ok"><b><svg><use href="#i-check"/></svg>One review, one real visit</b><span>The QR code sits on the table, so reviews come from people who actually ate there.</span></div>
-            <div class="rule no"><b><svg><use href="#i-x"/></svg>No incentives for reviews</b><span>Google doesn't allow discounts or gifts in exchange for reviews. Don't offer them on your table cards.</span></div>
-            <div class="rule no"><b><svg><use href="#i-x"/></svg>No blocking negative reviews</b><span>Google prohibits stopping unhappy customers from reviewing ("review gating"). Review Finder never does.</span></div>
-            <div class="rule no"><b><svg><use href="#i-x"/></svg>No fake or staff reviews</b><span>Owners and staff shouldn't review their own business. Google removes these and can penalise the listing.</span></div>
+            <div class="rule ok"><b><svg><use href="#i-check"/></svg><span data-i18n-html="lp.73">Every guest can post on Google</span></b><span><span data-i18n-html="lp.74">Guests with a low rating see a "Post it to Google" option, with a second screen offering a direct line to the management as well.</span></span></div>
+            <div class="rule ok"><b><svg><use href="#i-check"/></svg><span data-i18n-html="lp.75">Guests write their own words</span></b><span><span data-i18n-html="lp.76">We only copy what the guest typed. Nothing is written, edited or posted for them.</span></span></div>
+            <div class="rule ok"><b><svg><use href="#i-check"/></svg><span data-i18n-html="lp.77">One review, one real visit</span></b><span><span data-i18n-html="lp.78">The QR code sits on the table, so reviews come from people who actually ate there.</span></span></div>
+            <div class="rule no"><b><svg><use href="#i-x"/></svg><span data-i18n-html="lp.79">No incentives for reviews</span></b><span><span data-i18n-html="lp.80">Google doesn't allow discounts or gifts in exchange for reviews. Don't offer them on your table cards.</span></span></div>
+            <div class="rule no"><b><svg><use href="#i-x"/></svg><span data-i18n-html="lp.81">No blocking negative reviews</span></b><span><span data-i18n-html="lp.82">Google prohibits stopping unhappy customers from reviewing ("review gating"). Review Finder never does.</span></span></div>
+            <div class="rule no"><b><svg><use href="#i-x"/></svg><span data-i18n-html="lp.83">No fake or staff reviews</span></b><span><span data-i18n-html="lp.84">Owners and staff shouldn't review their own business. Google removes these and can penalise the listing.</span></span></div>
           </div>
-          <p class="rules-note">Summary for guidance only. See Google's own <a href="https://support.google.com/contributionpolicy/answer/7400114" target="_blank" rel="noopener">prohibited and restricted content policy</a> for the full rules.</p>
+          <p class="rules-note"><span data-i18n-html="lp.85">Summary for guidance only. See Google's own <a href="https://support.google.com/contributionpolicy/answer/7400114" target="_blank" rel="noopener">prohibited and restricted content policy</a> for the full rules.</span></p>
         </div>
       </div>
     </section>
@@ -485,28 +508,28 @@
     <section class="sec pricing" id="pricing">
       <div class="wrap">
         <div class="sec-head reveal">
-          <span class="kicker">Pricing</span>
-          <h2>One simple price.<br /><em>Unlimited</em> tables.</h2>
-          <p>One price including VAT. No per-table fees, no per-scan fees, no surprises.</p>
+          <span class="kicker"><span data-i18n-html="lp.4">Pricing</span></span>
+          <h2><span data-i18n-html="lp.86">One simple price.<br /><em>Unlimited</em> tables.</span></h2>
+          <p><span data-i18n-html="lp.87">One price including VAT. No per-table fees, no per-scan fees, no surprises.</span></p>
         </div>
         <div class="price-wrap reveal">
           <div class="price-main">
-            <span class="plan">Review Finder · Annual</span>
-            <div class="amount"><span class="cur">SAR</span><span class="val">2,500</span><span class="per">/ restaurant / year</span></div>
-            <p class="price-vat">Including 15% VAT</p>
-            <p class="price-sub">Works out to about <b>SAR 208 a month</b>, all-in. Every table, every entrance, every receipt.</p>
-            <a class="btn btn-primary wa-link" href="#"><svg><use href="#i-wa"/></svg>Get started on WhatsApp</a>
-            <p class="price-fine">Already a customer? <a href="login.html">Log in to your dashboard</a></p>
+            <span class="plan"><span data-i18n-html="lp.88">Review Finder · Annual</span></span>
+            <div class="amount"><span class="cur"><span data-i18n-html="lp.89">SAR</span></span><span class="val">2,500</span><span class="per"><span data-i18n-html="lp.90">/ restaurant / year</span></span></div>
+            <p class="price-vat"><span data-i18n-html="lp.91">Including 15% VAT</span></p>
+            <p class="price-sub"><span data-i18n-html="lp.92">Works out to about <b>SAR 208 a month</b>, all-in. Every table, every entrance, every receipt.</span></p>
+            <a class="btn btn-primary wa-link" href="#"><svg><use href="#i-wa"/></svg><span data-i18n-html="lp.93">Get started on WhatsApp</span></a>
+            <p class="price-fine"><span data-i18n-html="lp.94">Already a customer? <a href="login.html">Log in to your dashboard</a></span></p>
           </div>
           <div class="price-side">
-            <h3>Everything included</h3>
+            <h3><span data-i18n-html="lp.95">Everything included</span></h3>
             <ul class="incl">
-              <li><svg><use href="#i-check"/></svg><span>Unlimited tables and QR codes<small>Print as many as your restaurant needs</small></span></li>
-              <li><svg><use href="#i-check"/></svg><span>Branded review page<small>Your logo, colours and message</small></span></li>
-              <li><svg><use href="#i-check"/></svg><span>Google review routing<small>With your own rating threshold</small></span></li>
-              <li><svg><use href="#i-check"/></svg><span>WhatsApp alerts to 2 numbers<small>For the owner and a manager</small></span></li>
-              <li><svg><use href="#i-check"/></svg><span>Owner dashboard and review inbox<small>Photos, averages and issue tracking</small></span></li>
-              <li><svg><use href="#i-check"/></svg><span>Setup by H&amp;H Technology<small>We configure your page and QR codes</small></span></li>
+              <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.96">Unlimited tables and QR codes</span><small><span data-i18n-html="lp.97">Print as many as your restaurant needs</span></small></span></li>
+              <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.98">Branded review page</span><small><span data-i18n-html="lp.99">Your logo, colours and message</span></small></span></li>
+              <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.100">Google review routing</span><small><span data-i18n-html="lp.101">With your own rating threshold</span></small></span></li>
+              <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.102">WhatsApp alerts to 2 numbers</span><small><span data-i18n-html="lp.103">For the owner and a manager</span></small></span></li>
+              <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.104">Owner dashboard and review inbox</span><small><span data-i18n-html="lp.105">Photos, averages and issue tracking</span></small></span></li>
+              <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.106">Setup by H&amp;H Technology</span><small><span data-i18n-html="lp.107">We configure your page and QR codes</span></small></span></li>
             </ul>
           </div>
         </div>
@@ -517,37 +540,37 @@
     <section class="sec" id="faq" style="padding-top:40px">
       <div class="wrap">
         <div class="sec-head reveal">
-          <span class="kicker">FAQ</span>
-          <h2>Questions, answered.</h2>
+          <span class="kicker"><span data-i18n-html="lp.5">FAQ</span></span>
+          <h2><span data-i18n-html="lp.108">Questions, answered.</span></h2>
         </div>
         <div class="faq reveal">
           <details>
-            <summary>Does Review Finder post reviews to Google for my guests?</summary>
-            <p>No. Google only accepts reviews written by the guest themselves. Review Finder copies the guest's comment and opens your Google review form, so they just tap the stars and paste. It takes them a few seconds.</p>
+            <summary><span data-i18n-html="lp.109">Does Review Finder post reviews to Google for my guests?</span></summary>
+            <p><span data-i18n-html="lp.110">No. Google only accepts reviews written by the guest themselves. Review Finder copies the guest's comment and opens your Google review form, so they just tap the stars and paste. It takes them a few seconds.</span></p>
           </details>
           <details>
-            <summary>What happens when a guest gives a low rating?</summary>
-            <p>Their message, any photos and their contact details (if they choose to share them) go privately to your WhatsApp and your dashboard. You can reply to the guest on WhatsApp in one tap and mark the issue resolved.</p>
+            <summary><span data-i18n-html="lp.111">What happens when a guest gives a low rating?</span></summary>
+            <p><span data-i18n-html="lp.112">Their message, any photos and their contact details (if they choose to share them) go privately to your WhatsApp and your dashboard. You can reply to the guest on WhatsApp in one tap and mark the issue resolved.</span></p>
           </details>
           <details>
-            <summary>Is this allowed under Google's review rules?</summary>
-            <p>Yes, when it's used as designed. Google doesn't allow businesses to block or discourage negative reviews, so every guest, whatever their rating, sees a "Post it to Google" option. Lower ratings also get a direct line to the management, which is about fixing problems, not hiding them. Never offer rewards in exchange for reviews.</p>
+            <summary><span data-i18n-html="lp.113">Is this allowed under Google's review rules?</span></summary>
+            <p><span data-i18n-html="lp.114">Yes, when it's used as designed. Google doesn't allow businesses to block or discourage negative reviews, so every guest, whatever their rating, sees a "Post it to Google" option. Lower ratings also get a direct line to the management, which is about fixing problems, not hiding them. Never offer rewards in exchange for reviews.</span></p>
           </details>
           <details>
-            <summary>Do guests need to download an app or sign up?</summary>
-            <p>No. They scan the QR code with their phone camera and the review page opens in their browser.</p>
+            <summary><span data-i18n-html="lp.115">Do guests need to download an app or sign up?</span></summary>
+            <p><span data-i18n-html="lp.116">No. They scan the QR code with their phone camera and the review page opens in their browser.</span></p>
           </details>
           <details>
-            <summary>What does "unlimited tables" mean?</summary>
-            <p>One subscription covers the whole restaurant. Put the QR code on every table, menu, receipt or the entrance. There's no limit on scans or reviews.</p>
+            <summary><span data-i18n-html="lp.117">What does "unlimited tables" mean?</span></summary>
+            <p><span data-i18n-html="lp.118">One subscription covers the whole restaurant. Put the QR code on every table, menu, receipt or the entrance. There's no limit on scans or reviews.</span></p>
           </details>
           <details>
-            <summary>Can I change my colours, logo or threshold later?</summary>
-            <p>Yes. Log in to your dashboard and change them any time. Changes go live immediately, and your printed QR codes keep working.</p>
+            <summary><span data-i18n-html="lp.119">Can I change my colours, logo or threshold later?</span></summary>
+            <p><span data-i18n-html="lp.120">Yes. Log in to your dashboard and change them any time. Changes go live immediately, and your printed QR codes keep working.</span></p>
           </details>
           <details>
-            <summary>How do I get started?</summary>
-            <p>Message us on WhatsApp. We'll set up your review page, connect your Google review link and WhatsApp numbers, and send you your QR codes and dashboard login.</p>
+            <summary><span data-i18n-html="lp.121">How do I get started?</span></summary>
+            <p><span data-i18n-html="lp.122">Message us on WhatsApp. We'll set up your review page, connect your Google review link and WhatsApp numbers, and send you your QR codes and dashboard login.</span></p>
           </details>
         </div>
       </div>
@@ -556,11 +579,11 @@
     <!-- CTA -->
     <section class="cta-band reveal">
       <div class="cta-in">
-        <h2>Ready for more 5-star reviews?</h2>
-        <p>Get Review Finder for your restaurant for SAR 2,500 a year including VAT, with unlimited tables.</p>
+        <h2><span data-i18n-html="lp.123">Ready for more 5-star reviews?</span></h2>
+        <p><span data-i18n-html="lp.124">Get Review Finder for your restaurant for SAR 2,500 a year including VAT, with unlimited tables.</span></p>
         <div class="cta-row">
-          <a class="btn btn-primary wa-link" href="#"><svg><use href="#i-wa"/></svg>Talk to us on WhatsApp</a>
-          <a class="btn btn-ghost" href="login.html"><svg><use href="#i-lock"/></svg>Login</a>
+          <a class="btn btn-primary wa-link" href="#"><svg><use href="#i-wa"/></svg><span data-i18n-html="lp.125">Talk to us on WhatsApp</span></a>
+          <a class="btn btn-ghost" href="login.html"><svg><use href="#i-lock"/></svg><span data-i18n-html="lp.6">Login</span></a>
         </div>
       </div>
     </section>
@@ -571,30 +594,30 @@
       <div class="foot">
         <div>
           <img class="logo" src="assets/brand/HH_Logo_Primary_Reverse_White.png" alt="H&amp;H Technology" />
-          <p>Review Finder is built by H&amp;H Technology, the tech layer behind Saudi Arabia's smartest real estate and AI experiences.</p>
+          <p><span data-i18n-html="lp.126">Review Finder is built by H&amp;H Technology, the tech layer behind Saudi Arabia's smartest real estate and AI experiences.</span></p>
         </div>
         <div>
-          <h4>Product</h4>
+          <h4><span data-i18n-html="lp.127">Product</span></h4>
           <ul>
-            <li><a href="#how">How it works</a></li>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#pricing">Pricing</a></li>
-            <li><a href="login.html">Login</a></li>
+            <li><a href="#how"><span data-i18n-html="lp.1">How it works</span></a></li>
+            <li><a href="#features"><span data-i18n-html="lp.2">Features</span></a></li>
+            <li><a href="#pricing"><span data-i18n-html="lp.4">Pricing</span></a></li>
+            <li><a href="login.html"><span data-i18n-html="lp.6">Login</span></a></li>
           </ul>
         </div>
         <div>
-          <h4>Contact</h4>
+          <h4><span data-i18n-html="lp.128">Contact</span></h4>
           <ul>
-            <li><a class="wa-link" href="#">WhatsApp +966 504 920 373</a></li>
+            <li><a class="wa-link" href="#"><span data-i18n-html="lp.129">WhatsApp +966 504 920 373</span></a></li>
             <li><a href="mailto:hello@hnhmena.com">hello@hnhmena.com</a></li>
             <li><a href="https://www.hnhmena.com" target="_blank" rel="noopener">www.hnhmena.com</a></li>
-            <li><span style="color:var(--muted);font-size:14px">Tahlia Street, Jeddah, Saudi Arabia</span></li>
+            <li><span style="color:var(--muted);font-size:14px"><span data-i18n-html="lp.130">Tahlia Street, Jeddah, Saudi Arabia</span></span></li>
           </ul>
         </div>
       </div>
       <div class="foot-base">
-        <span>© <span id="year">2026</span> H&amp;H Technology. All rights reserved.</span>
-        <span>Google is a trademark of Google LLC. Review Finder is not affiliated with Google.</span>
+        <span>© <span id="year">2026</span><span data-i18n-html="lp.131"> H&amp;H Technology. All rights reserved.</span></span>
+        <span><span data-i18n-html="lp.132">Google is a trademark of Google LLC. Review Finder is not affiliated with Google.</span></span>
       </div>
     </div>
   </footer>
@@ -602,8 +625,13 @@
   <script>
     (() => {
       // WhatsApp links with a prefilled message
-      const wa = 'https://wa.me/966504920373?text=' + encodeURIComponent("Hi H&H, I'm interested in Review Finder for my restaurant.");
-      document.querySelectorAll('.wa-link').forEach((a) => { a.href = wa; a.target = '_blank'; a.rel = 'noopener'; });
+      const setWa = () => {
+        const wa = 'https://wa.me/966504920373?text=' + encodeURIComponent(I18N.t('lp.wa'));
+        document.querySelectorAll('.wa-link').forEach((a) => { a.href = wa; a.target = '_blank'; a.rel = 'noopener'; });
+        document.title = I18N.t('lp.docTitle');
+      };
+      I18N.apply(); setWa();
+      addEventListener('langchange', () => { setWa(); show(seq[i]); });
       document.getElementById('year').textContent = new Date().getFullYear();
 
       // Nav border on scroll
@@ -624,7 +652,7 @@
 
       // Hero phone demo: cycles ratings to show the threshold routing
       const $ = (id) => document.getElementById(id);
-      const MOODS = ['', 'Terrible', 'Not great', 'It was okay', 'Really good', 'Loved it!'];
+      const mood = (r) => I18N.t('lp.mood.' + r);
       const FACES = [null,
         { m: [70, 120, 100, 82, 130, 120], ry: 12, b: [42, 42, 80, 24], bo: 1, c: 0 },
         { m: [72, 114, 100, 100, 128, 112], ry: 12, b: [44, 38, 80, 30], bo: .9, c: 0 },
@@ -660,13 +688,13 @@
       const gSvg = '<svg viewBox="0 0 48 48" aria-hidden="true"><use href="#i-g"/></svg>';
       function show(r) {
         morph(FACES[r]);
-        $('dMood').textContent = MOODS[r];
+        $('dMood').textContent = mood(r);
         [...$('dDots').children].forEach((d, i) => d.classList.toggle('on', i < r));
         const pub = r >= THRESHOLD;
         $('dBtn').className = 's-btn' + (pub ? ' google' : '');
-        $('dBtn').innerHTML = pub ? gSvg + 'Post to Google!' : 'Send';
+        $('dBtn').innerHTML = pub ? gSvg + I18N.t('lp.demo.post') : I18N.t('lp.demo.send');
         $('routeTag').className = 'tag ' + (pub ? 'pub' : 'priv');
-        $('routeTag').textContent = pub ? `${r}★ → Google` : `${r}★ → Owner, privately`;
+        $('routeTag').textContent = I18N.t(pub ? 'lp.demo.toGoogle' : 'lp.demo.toOwner', { n: I18N.fmtNum(r) });
         $('fGoogle').classList.toggle('dim', !pub);
         $('fWa').classList.toggle('dim', pub);
       }

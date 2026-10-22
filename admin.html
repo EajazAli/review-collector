@@ -7,11 +7,13 @@
   <link rel="icon" type="image/png" href="assets/brand/HH_Icon_Navy.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/admin.css" />
+  <script src="assets/i18n.js"></script>
+  <script src="assets/i18n-admin.js"></script>
 </head>
 <body class="loading">
-  <div class="gate" id="gate"><div class="spinner" aria-label="Loading"></div><div class="gate-msg" id="gateMsg" hidden></div></div>
+  <div class="gate" id="gate"><div class="spinner" data-i18n-aria="common.loading"></div><div class="gate-msg" id="gateMsg" hidden></div></div>
   <aside class="nav">
     <div class="brand">
       <img class="brand-logo" src="assets/brand/HH_Logo_Primary_Reverse_White.png" alt="H&amp;H Technology" />
@@ -19,24 +21,25 @@
       <span class="product">Review <b>Finder</b></span>
     </div>
     <nav>
-      <button class="tab active" data-view="businesses"><svg viewBox="0 0 24 24"><path d="M3 10l2-6h14l2 6M4 10v10h16V10M3 10h18M9 20v-5h6v5"/></svg><span id="tabBizLabel">Businesses</span></button>
-      <button class="tab" data-view="inbox"><svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5"/></svg>Reviews<span class="pill" id="inboxCount" hidden></span></button>
-      <button class="tab" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+      <button class="tab active" data-view="businesses"><svg viewBox="0 0 24 24"><path d="M3 10l2-6h14l2 6M4 10v10h16V10M3 10h18M9 20v-5h6v5"/></svg><span id="tabBizLabel" data-i18n="a.tab.businesses">Businesses</span></button>
+      <button class="tab" data-view="inbox"><svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5"/></svg><span data-i18n="a.tab.reviews">Reviews</span><span class="pill" id="inboxCount" hidden></span></button>
+      <button class="tab" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="a.tab.settings">Settings</span></button>
     </nav>
+    <button class="nav-lang" type="button" data-lang-toggle>العربية</button>
     <div class="who">
       <span class="who-av" id="whoAv"></span>
       <span class="who-text"><b id="whoEmail"></b><small id="whoRole"></small></span>
-      <button class="who-out" id="signOut" title="Sign out" aria-label="Sign out"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg></button>
+      <button class="who-out" id="signOut" data-i18n-aria="a.signOut"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg></button>
     </div>
-    <p class="nav-foot">Review Finder by <a href="https://www.hnhmena.com" target="_blank" rel="noopener">H&amp;H Technology</a></p>
+    <p class="nav-foot" data-i18n-html="a.navFoot">Review Finder by <a href="https://www.hnhmena.com" target="_blank" rel="noopener">H&amp;H Technology</a></p>
   </aside>
 
   <main class="main">
     <!-- BUSINESSES -->
     <section class="view" id="view-businesses">
       <header class="page-head">
-        <div><h1 id="bizTitle">Businesses</h1><p class="muted" id="bizSub">Create a review page and QR code for each business.</p></div>
-        <button class="btn primary admin-only" id="addBiz"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New business</button>
+        <div><h1 id="bizTitle" data-i18n="a.biz.title">Businesses</h1><p class="muted" id="bizSub" data-i18n="a.biz.sub">Create a review page and QR code for each business.</p></div>
+        <button class="btn primary admin-only" id="addBiz"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="a.newBiz">New business</span></button>
       </header>
 
       <div class="biz-strip" id="bizList"></div>
@@ -44,97 +47,100 @@
       <div class="workspace" id="workspace" hidden>
         <form class="editor" id="editor" autocomplete="off">
           <div class="card">
-            <h2>Basics</h2>
+            <h2 data-i18n="a.basics">Basics</h2>
             <div class="logo-row">
               <label class="logo-drop" id="logoDrop" tabindex="0">
                 <input type="file" id="logoInput" accept="image/*" />
                 <img id="logoImg" alt="" hidden />
-                <span id="logoPh">Upload<br />logo</span>
+                <span id="logoPh" data-i18n-html="a.uploadLogo">Upload<br />logo</span>
               </label>
               <div class="grow grid2">
-                <label class="f"><span>Business name</span><input name="bizName" required placeholder="e.g. Al Ameen Restaurant" /></label>
-                <label class="f"><span>Page link</span><div class="prefix"><em>?b=</em><input name="slug" required pattern="[a-z0-9\-]+" placeholder="al-ameen" /></div></label>
-                <label class="f span2"><span>Subtitle on review page</span><input name="tagline" placeholder="Your feedback matters!" /></label>
+                <label class="f"><span data-i18n="a.bizName">Business name</span><input name="bizName" required data-i18n-ph="a.bizName.ph" /></label>
+                <label class="f"><span data-i18n="a.pageLink">Page link</span><div class="prefix"><em>?b=</em><input name="slug" required pattern="[a-z0-9\-]+" placeholder="al-ameen" /></div></label>
+                <label class="f"><span data-i18n="a.bizNameAr">Business name in Arabic (optional)</span><input name="nameAr" dir="rtl" lang="ar" data-i18n-ph="a.bizNameAr.ph" /></label>
+                <label class="f"><span data-i18n="a.tagline">Subtitle on review page</span><input name="tagline" data-i18n-ph="a.tagline.ph" /></label>
+                <label class="f span2"><span data-i18n="a.taglineAr">Subtitle in Arabic (optional)</span><input name="taglineAr" dir="rtl" lang="ar" data-i18n-ph="a.taglineAr.ph" /></label>
+                <p class="muted small span2 lang-note" data-i18n="a.langNote">Guests see the review page in Arabic or English automatically, based on their phone's language. They can also switch.</p>
               </div>
             </div>
-            <button type="button" class="link small" id="logoRemove" hidden>Remove logo</button>
+            <button type="button" class="link small" id="logoRemove" hidden data-i18n="a.removeLogo">Remove logo</button>
           </div>
 
           <div class="card admin-only">
-            <h2>Client logins</h2>
-            <p class="muted small">Email addresses that can sign in and manage this business, one per line. They see only this business and its reviews.</p>
-            <textarea name="members" rows="3" placeholder="owner@restaurant.com"></textarea>
-            <p class="note">To create a login: Supabase → <b>Authentication → Users → Add user → Create new user</b>, enter the same email and a password, tick <b>Auto Confirm User</b>. Then send the client the login page and their password.</p>
+            <h2 data-i18n="a.logins">Client logins</h2>
+            <p class="muted small" data-i18n="a.logins.sub">Email addresses that can sign in and manage this business, one per line. They see only this business and its reviews.</p>
+            <textarea name="members" rows="3" dir="ltr" placeholder="owner@restaurant.com"></textarea>
+            <p class="note" data-i18n-html="a.logins.note">To create a login: Supabase → <b>Authentication → Users → Add user → Create new user</b>, enter the same email and a password, tick <b>Auto Confirm User</b>. Then send the client the login page and their password.</p>
           </div>
 
           <div class="card">
-            <h2>Review threshold</h2>
-            <p class="muted">Ratings at or above the threshold are sent to Google. Lower ratings go privately to the owner, so they get a second chance.</p>
-            <div class="seg" id="threshold" role="radiogroup" aria-label="Threshold"></div>
+            <h2 data-i18n="a.threshold">Review threshold</h2>
+            <p class="muted" data-i18n="a.threshold.sub">Ratings at or above the threshold are sent to Google. Lower ratings go privately to the owner, so they get a second chance.</p>
+            <div class="seg" id="threshold" role="radiogroup" data-i18n-aria="a.threshold"></div>
             <div class="split" id="splitBar"></div>
           </div>
 
           <div class="card">
-            <h2>Theme</h2>
+            <h2 data-i18n="a.theme">Theme</h2>
             <div class="swatches" id="swatches"></div>
             <div class="grid4">
-              <label class="f color"><span>Top colour</span><input type="color" name="from" /></label>
-              <label class="f color"><span>Bottom colour</span><input type="color" name="to" /></label>
-              <label class="f color"><span>Text</span><input type="color" name="ink" /></label>
-              <label class="f color"><span>Face</span><input type="color" name="face" /></label>
+              <label class="f color"><span data-i18n="a.topColour">Top colour</span><input type="color" name="from" /></label>
+              <label class="f color"><span data-i18n="a.bottomColour">Bottom colour</span><input type="color" name="to" /></label>
+              <label class="f color"><span data-i18n="a.textColour">Text</span><input type="color" name="ink" /></label>
+              <label class="f color"><span data-i18n="a.faceColour">Face</span><input type="color" name="face" /></label>
             </div>
           </div>
 
           <div class="card">
-            <h2>Google review link</h2>
-            <label class="f"><span>Google "write a review" link or Place ID</span>
-              <div class="inline"><input name="googleReviewUrl" placeholder="https://g.page/r/XXXX/review" /><button type="button" class="btn" id="testGoogle">Test</button></div>
+            <h2 data-i18n="a.google">Google review link</h2>
+            <label class="f"><span data-i18n="a.google.label">Google "write a review" link or Place ID</span>
+              <div class="inline"><input name="googleReviewUrl" dir="ltr" placeholder="https://g.page/r/XXXX/review" /><button type="button" class="btn" id="testGoogle" data-i18n="a.test">Test</button></div>
             </label>
-            <p class="muted small">In Google Business Profile, open <b>Ask for reviews</b> and copy the link. A Place ID (starts with <code>ChIJ</code>) also works.</p>
+            <p class="muted small" data-i18n-html="a.google.help">In Google Business Profile, open <b>Ask for reviews</b> and copy the link. A Place ID (starts with <code>ChIJ</code>) also works.</p>
           </div>
 
           <div class="card">
-            <h2>Private feedback delivery</h2>
-            <p class="muted small">Low ratings, with photos, go to these WhatsApp numbers and to your inbox.</p>
+            <h2 data-i18n="a.delivery">Private feedback delivery</h2>
+            <p class="muted small" data-i18n="a.delivery.sub">Low ratings, with photos, go to these WhatsApp numbers and to your inbox.</p>
             <div class="grid2">
-              <label class="f"><span>WhatsApp contact 1</span><input name="wa0" type="tel" placeholder="+966 5X XXX XXXX" /></label>
-              <label class="f"><span>WhatsApp contact 2 (optional)</span><input name="wa1" type="tel" placeholder="+966 5X XXX XXXX" /></label>
-              <label class="f span2"><span>Webhook URL (Make, Zapier or Netlify Function)</span><input name="webhookUrl" type="url" placeholder="https://hook.eu2.make.com/…" /></label>
+              <label class="f"><span data-i18n="a.wa1">WhatsApp contact 1</span><input name="wa0" type="tel" dir="ltr" placeholder="+966 5X XXX XXXX" /></label>
+              <label class="f"><span data-i18n="a.wa2">WhatsApp contact 2 (optional)</span><input name="wa1" type="tel" dir="ltr" placeholder="+966 5X XXX XXXX" /></label>
+              <label class="f span2"><span data-i18n="a.webhook">Webhook URL (Make, Zapier or Netlify Function)</span><input name="webhookUrl" type="url" dir="ltr" placeholder="https://hook.eu2.make.com/…" /></label>
             </div>
             <p class="note" id="deliveryNote"></p>
           </div>
 
           <div class="card">
-            <h2>Social media</h2>
-            <p class="muted small">Shown on the thank-you screen. Use a handle (@name) or a full link.</p>
+            <h2 data-i18n="a.social">Social media</h2>
+            <p class="muted small" data-i18n="a.social.sub">Shown on the thank-you screen. Use a handle (@name) or a full link.</p>
             <div class="grid2" id="socialFields"></div>
           </div>
 
           <div class="savebar">
-            <button type="button" class="btn danger ghost admin-only" id="deleteBiz">Delete</button>
+            <button type="button" class="btn danger ghost admin-only" id="deleteBiz" data-i18n="a.delete">Delete</button>
             <span class="status" id="saveStatus"></span>
-            <button type="submit" class="btn primary">Save changes</button>
+            <button type="submit" class="btn primary" data-i18n="a.save">Save changes</button>
           </div>
         </form>
 
         <aside class="side">
           <div class="card phone-card">
-            <div class="card-head"><h2>Live preview</h2><a class="link small" id="openPage" target="_blank" rel="noopener">Open page ↗</a></div>
-            <div class="phone"><div class="notch"></div><iframe id="preview" title="Review page preview"></iframe></div>
+            <div class="card-head"><h2 data-i18n="a.preview">Live preview</h2><a class="link small" id="openPage" target="_blank" rel="noopener" data-i18n="a.openPage">Open page ↗</a></div>
+            <div class="phone"><div class="notch"></div><iframe id="preview" data-i18n-aria="a.preview"></iframe></div>
           </div>
 
           <div class="card qr-card" id="qrCard">
-            <h2>QR code</h2>
+            <h2 data-i18n="a.qr">QR code</h2>
             <div class="table-card" id="tableCard">
               <div class="tc-head" id="tcHead"></div>
               <div id="qr" class="qr"></div>
-              <p class="tc-cta">Scan to rate your visit</p>
+              <p class="tc-cta">Scan to rate your visit<span class="tc-ar" lang="ar" dir="rtl">امسح الرمز لتقييم زيارتك</span></p>
             </div>
-            <div class="url-row"><input id="pageUrl" readonly /><button type="button" class="btn" id="copyUrl">Copy</button></div>
+            <div class="url-row"><input id="pageUrl" readonly dir="ltr" /><button type="button" class="btn" id="copyUrl" data-i18n="a.copy">Copy</button></div>
             <div class="btn-row">
               <button type="button" class="btn" id="dlPng">PNG</button>
               <button type="button" class="btn" id="dlSvg">SVG</button>
-              <button type="button" class="btn" id="printCard">Print table card</button>
+              <button type="button" class="btn" id="printCard" data-i18n="a.print">Print table card</button>
             </div>
           </div>
         </aside>
@@ -142,47 +148,52 @@
 
       <div class="empty" id="emptyState" hidden>
         <div class="empty-art">★</div>
-        <h2 id="emptyTitle">No businesses yet</h2>
-        <p class="muted" id="emptyText">Add your first business to get a review page and QR code.</p>
-        <button class="btn primary admin-only" id="addBiz2">New business</button>
+        <h2 id="emptyTitle" data-i18n="a.empty.title">No businesses yet</h2>
+        <p class="muted" id="emptyText" data-i18n="a.empty.text">Add your first business to get a review page and QR code.</p>
+        <button class="btn primary admin-only" id="addBiz2" data-i18n="a.newBiz">New business</button>
       </div>
     </section>
 
     <!-- INBOX -->
     <section class="view" id="view-inbox" hidden>
       <header class="page-head">
-        <div><h1>Reviews</h1><p class="muted">Every rating from your QR code. Private ones need your attention.</p></div>
+        <div><h1 data-i18n="a.tab.reviews">Reviews</h1><p class="muted" data-i18n="a.reviews.sub">Every rating from your QR code. Private ones need your attention.</p></div>
         <div class="filters">
-          <a class="btn g-btn" id="openGoogleReviews" href="https://business.google.com/reviews" target="_blank" rel="noopener"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Open Google reviews</a>
+          <a class="btn g-btn" id="openGoogleReviews" href="https://business.google.com/reviews" target="_blank" rel="noopener"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span data-i18n="a.openGoogle">Open Google reviews</span></a>
           <select id="fBiz"></select>
-          <select id="fRoute"><option value="private">Private only</option><option value="google">Sent to Google</option><option value="all">All ratings</option></select>
+          <select id="fRoute"><option value="private" data-i18n="a.f.private">Private only</option><option value="google" data-i18n="a.f.google">Sent to Google</option><option value="all" data-i18n="a.f.all">All ratings</option></select>
         </div>
       </header>
-      <p class="g-tip">To reply on Google, sign in to Google with the account that manages your Business Profile, then use <b>Reply on Google</b>.</p>
+      <p class="g-tip" data-i18n-html="a.gTip">To reply on Google, sign in to Google with the account that manages your Business Profile, then use <b>Reply on Google</b>.</p>
       <div class="stats" id="stats"></div>
       <div class="feed" id="feed"></div>
     </section>
 
     <!-- SETTINGS -->
     <section class="view" id="view-settings" hidden>
-      <header class="page-head"><div><h1>Settings</h1><p class="muted">Changes save straight to the cloud. Guests see them right away.</p></div></header>
+      <header class="page-head"><div><h1 data-i18n="a.tab.settings">Settings</h1><p class="muted" data-i18n="a.settings.sub">Changes save straight to the cloud. Guests see them right away.</p></div></header>
       <div class="publish">
+        <div class="card">
+          <h2 data-i18n="a.language">Language</h2>
+          <p class="muted small" data-i18n="a.language.sub">Choose the language of your dashboard. Guests choose their own on the review page.</p>
+          <div class="btn-row lang-pick"><button class="btn" type="button" data-set-lang="en" lang="en">English</button><button class="btn" type="button" data-set-lang="ar" lang="ar">العربية</button></div>
+        </div>
         <form class="card" id="pwForm">
-          <h2>Change password</h2>
-          <p class="muted small">Signed in as <b id="pwEmail"></b>.</p>
-          <div class="inline"><input id="newPw" type="password" minlength="8" autocomplete="new-password" placeholder="New password (8+ characters)" required /><button class="btn primary">Update</button></div>
+          <h2 data-i18n="a.pw">Change password</h2>
+          <p class="muted small"><span data-i18n="a.signedInAs">Signed in as</span> <b id="pwEmail" dir="ltr"></b></p>
+          <div class="inline"><input id="newPw" type="password" minlength="8" autocomplete="new-password" data-i18n-ph="a.pw.ph" required /><button class="btn primary" data-i18n="a.update">Update</button></div>
         </form>
         <div class="card admin-only">
-          <h2>Public site address</h2>
-          <p class="muted small">QR codes point here. Leave empty to use the address you're on now.</p>
-          <div class="inline"><input id="publicUrl" placeholder="https://reviewfinder-hnhmena.netlify.app" /><button class="btn" id="savePublic">Save</button></div>
+          <h2 data-i18n="a.publicUrl">Public site address</h2>
+          <p class="muted small" data-i18n="a.publicUrl.sub">QR codes point here. Leave empty to use the address you're on now.</p>
+          <div class="inline"><input id="publicUrl" dir="ltr" placeholder="https://reviewfinder-hnhmena.netlify.app" /><button class="btn" id="savePublic" data-i18n="a.saveShort">Save</button></div>
         </div>
         <div class="card admin-only">
-          <h2>Import businesses</h2>
-          <p class="muted small">Copy businesses from the old <code>data/businesses.json</code> into the database. Existing ones (same page link) are updated, not duplicated.</p>
+          <h2 data-i18n="a.import">Import businesses</h2>
+          <p class="muted small" data-i18n-html="a.import.sub">Copy businesses from the old <code>data/businesses.json</code> into the database. Existing ones (same page link) are updated, not duplicated.</p>
           <div class="btn-row">
-            <button class="btn" id="importLive">Import from live site</button>
-            <label class="btn">Import JSON file<input type="file" id="importJson" accept="application/json" hidden /></label>
+            <button class="btn" id="importLive" data-i18n="a.importLive">Import from live site</button>
+            <label class="btn"><span data-i18n="a.importJson">Import JSON file</span><input type="file" id="importJson" accept="application/json" hidden /></label>
           </div>
         </div>
       </div>

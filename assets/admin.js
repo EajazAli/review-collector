@@ -2,6 +2,8 @@
   const $ = (id) => document.getElementById(id);
   const form = $('editor');
   const SOCIAL_KEYS = Object.keys(RC.SOCIAL);
+  const tr = (k, v) => I18N.t(k, v);
+  const num = (n) => I18N.fmtNum(n);
 
   let user = null;        // { email, isAdmin }
   let list = [];          // businesses this login can manage
@@ -29,7 +31,7 @@
       const av = b.logo ? `<img src="${RC.esc(b.logo)}" alt="">` : RC.esc(RC.initials(b.name));
       return `<button class="biz ${b.id === currentId ? 'active' : ''}" data-id="${b.id}">
         <span class="av" style="background:linear-gradient(150deg,${t.from},${t.to})">${av}</span>
-        <span><b>${RC.esc(b.name || 'Untitled')}</b><small>Threshold ${b.threshold}★ · /${RC.esc(b.slug)}</small></span></button>`;
+        <span><b>${RC.esc(RC.localName(b, I18N.lang) || tr('a.untitled'))}</b><small>${tr('a.thresholdShort', { n: num(b.threshold) })} · <span dir="ltr">/${RC.esc(b.slug)}</span></small></span></button>`;
     }).join('');
     $('emptyState').hidden = list.length > 0;
     // A client with a single business doesn't need the switcher.
@@ -42,7 +44,7 @@
   });
 
   async function select(id) {
-    if (dirty && !confirm('You have unsaved changes. Discard them?')) return;
+    if (dirty && !confirm(tr('t.discard'))) return;
     currentId = id;
     draft = structuredClone(list.find((b) => b.id === id));
     draft.members = '';
@@ -58,9 +60,9 @@
   }
 
   async function addBusiness() {
-    if (dirty && !confirm('You have unsaved changes. Discard them?')) return;
+    if (dirty && !confirm(tr('t.discard'))) return;
     dirty = false;
-    const b = { ...RC.newBusiness(), name: 'New business', slug: uniqueSlug('new-business') };
+    const b = { ...RC.newBusiness(), name: tr('a.newBizName'), slug: uniqueSlug('new-business') };
     try {
       const created = await RC.createBusiness(b);
       list.push(created);
@@ -80,16 +82,17 @@
   // ---------- Form ----------
   function buildStaticControls() {
     $('threshold').innerHTML = [1, 2, 3, 4, 5].map((n) =>
-      `<button type="button" role="radio" data-n="${n}">${n}★<small>${['Everything', '2★ and up', '3★ and up', '4★ and up', 'Only 5★'][n - 1]}</small></button>`).join('');
+      `<button type="button" role="radio" data-n="${n}">${num(n)}★<small>${tr(`a.th.${n}`)}</small></button>`).join('');
     $('swatches').innerHTML = Object.entries(RC.THEMES).map(([k, t]) =>
-      `<button type="button" class="sw" data-k="${k}" data-label="${t.label}" title="${t.label}" style="background:linear-gradient(150deg,${t.from},${t.to})"></button>`).join('');
+      `<button type="button" class="sw" data-k="${k}" data-label="${tr(`theme.${k}`)}" title="${tr(`theme.${k}`)}" style="background:linear-gradient(150deg,${t.from},${t.to})"></button>`).join('');
     $('socialFields').innerHTML = SOCIAL_KEYS.map((k) =>
-      `<label class="f"><span>${RC.SOCIAL[k].label}</span><input name="social_${k}" placeholder="${k === 'website' ? 'www.example.com' : '@handle'}" /></label>`).join('');
+      `<label class="f"><span>${tr(`social.${k}`)}</span><input name="social_${k}" dir="ltr" placeholder="${k === 'website' ? 'www.example.com' : tr('a.handle.ph')}" /></label>`).join('');
   }
 
   function fillForm() {
     const d = draft;
     form.bizName.value = d.name; form.slug.value = d.slug; form.tagline.value = d.tagline || '';
+    form.nameAr.value = d.nameAr || ''; form.taglineAr.value = d.taglineAr || '';
     form.slug.readOnly = !user.isAdmin;
     form.from.value = d.theme.from; form.to.value = d.theme.to; form.ink.value = d.theme.ink || '#ffffff'; form.face.value = d.theme.face || '#1e1a17';
     form.googleReviewUrl.value = d.googleReviewUrl || '';
@@ -133,7 +136,7 @@
       const on = +b.dataset.n === t; b.classList.toggle('on', on); b.setAttribute('aria-checked', on);
     });
     $('splitBar').innerHTML = [1, 2, 3, 4, 5].map((n) =>
-      n >= t ? `<span class="pub">${n}★ Google</span>` : `<span class="priv">${n}★ Private</span>`).join('');
+      n >= t ? `<span class="pub">${tr('a.split.google', { n: num(n) })}</span>` : `<span class="priv">${tr('a.split.private', { n: num(n) })}</span>`).join('');
   }
 
   $('swatches').addEventListener('click', (e) => {
@@ -157,7 +160,7 @@
   drop.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f?.type.startsWith('image/')) setLogo(f); });
   async function setLogo(file) {
     try { draft.logo = await RC.resizeImage(file, 320, 'image/png'); renderLogo(); markDirty(); }
-    catch { toast("Couldn't read that image"); }
+    catch { toast(tr('t.badImg')); }
     $('logoInput').value = '';
   }
   $('logoRemove').addEventListener('click', () => { draft.logo = ''; renderLogo(); markDirty(); });
@@ -168,13 +171,13 @@
 
   $('testGoogle').addEventListener('click', () => {
     const url = RC.googleLink(draft);
-    if (!url) return toast('Add a Google review link first');
+    if (!url) return toast(tr('t.addGoogle'));
     window.open(url, '_blank', 'noopener');
   });
 
   function markDirty() {
     dirty = true;
-    $('saveStatus').textContent = 'Unsaved changes';
+    $('saveStatus').textContent = tr('a.st.unsaved');
     refresh();
   }
 
@@ -182,11 +185,11 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (saving) return;
-    if (!draft.name.trim()) return toast('Add a business name');
-    if (!draft.slug) return toast('Add a page link');
-    if (list.some((b) => b.slug === draft.slug && b.id !== draft.id)) return toast('That page link is already used');
+    if (!draft.name.trim()) return toast(tr('t.addName'));
+    if (!draft.slug) return toast(tr('t.addSlug'));
+    if (list.some((b) => b.slug === draft.slug && b.id !== draft.id)) return toast(tr('t.slugUsed'));
     saving = true;
-    $('saveStatus').textContent = 'Saving…';
+    $('saveStatus').textContent = tr('a.st.saving');
     try {
       const saved = await RC.saveBusiness(draft);
       if (user.isAdmin) draft.members = (await RC.setMembers(draft.id, (draft.members || '').split(/[\s,;]+/))).join('\n');
@@ -194,23 +197,23 @@
       draft = { ...structuredClone(saved), members: draft.members };
       fillForm();
       dirty = false;
-      $('saveStatus').textContent = 'Saved · live now';
+      $('saveStatus').textContent = tr('a.st.saved');
       renderList(); refresh();
-      toast('Saved');
+      toast(tr('t.saved'));
     } catch (err) {
-      $('saveStatus').textContent = 'Not saved';
+      $('saveStatus').textContent = tr('a.st.notSaved');
       toast(friendly(err));
     } finally { saving = false; }
   });
 
   $('deleteBiz').addEventListener('click', async () => {
-    if (!confirm(`Delete "${draft.name}" and all its reviews? Printed QR codes for it will stop working.`)) return;
+    if (!confirm(tr('t.deleteConfirm', { name: draft.name }))) return;
     try {
       await RC.deleteBusiness(draft.id);
       list = list.filter((b) => b.id !== draft.id);
       dirty = false; currentId = null; draft = null;
       if (list[0]) select(list[0].id); else renderList();
-      toast('Deleted');
+      toast(tr('t.deleted'));
     } catch (e) { toast(friendly(e)); }
   });
 
@@ -218,9 +221,9 @@
 
   function friendly(err) {
     const m = err?.message || String(err);
-    if (/duplicate key|unique/i.test(m)) return 'That page link is already taken';
-    if (/row-level security|permission/i.test(m)) return "You don't have permission to do that";
-    if (/JWT|session/i.test(m)) return 'Your session expired. Please sign in again.';
+    if (/duplicate key|unique/i.test(m)) return tr('t.slugTaken');
+    if (/row-level security|permission/i.test(m)) return tr('t.noPermission');
+    if (/JWT|session/i.test(m)) return tr('t.session');
     return m;
   }
 
@@ -250,7 +253,7 @@
 
   let qr = null;
   function renderQR() {
-    if (typeof QRCodeStyling === 'undefined') { $('qr').textContent = 'QR library failed to load (check your connection).'; return; }
+    if (typeof QRCodeStyling === 'undefined') { $('qr').textContent = tr('a.qrFail'); return; }
     const dark = mix(draft.theme.to, '#000000', 0.35);
     qr = new QRCodeStyling({
       width: 600, height: 600, type: 'canvas', margin: 0,
@@ -278,7 +281,7 @@
     new QRCodeStyling({ ...qr._options, type: 'svg' }).download({ name: `qr-${draft.slug}`, extension: 'svg' });
   });
   $('copyUrl').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText($('pageUrl').value); toast('Link copied'); } catch { $('pageUrl').select(); }
+    try { await navigator.clipboard.writeText($('pageUrl').value); toast(tr('t.linkCopied')); } catch { $('pageUrl').select(); }
   });
   $('printCard').addEventListener('click', () => window.print());
 
@@ -287,19 +290,19 @@
     const wa = draft.whatsapp.filter(Boolean);
     if (draft.webhookUrl) {
       n.className = 'note ok';
-      n.textContent = `Automatic: feedback and photos are sent to your webhook${wa.length ? `, which should forward them to ${wa.join(' and ')}` : ''}.`;
+      n.textContent = wa.length ? tr('a.deliv.webhookWa', { numbers: wa.join(tr('a.and')) }) : tr('a.deliv.webhook');
     } else if (wa.length) {
       n.className = 'note';
-      n.textContent = `Every low rating is saved under Reviews. The guest's WhatsApp also opens a message to ${wa[0]}, which they send. Add a webhook to alert both numbers automatically.`;
+      n.textContent = tr('a.deliv.wa', { number: wa[0] });
     } else {
       n.className = 'note';
-      n.textContent = 'Low ratings are saved under Reviews. Add a WhatsApp number to also get them on your phone.';
+      n.textContent = tr('a.deliv.none');
     }
   }
 
   // ---------- Reviews ----------
   async function loadReviews() {
-    $('feed').innerHTML = '<div class="card"><p class="muted">Loading reviews…</p></div>';
+    $('feed').innerHTML = `<div class="card"><p class="muted">${tr('a.loadingReviews')}</p></div>`;
     try {
       reviews = await RC.listReviews(list.map((b) => b.id));
       photoLinks = await RC.photoUrls(reviews.flatMap((r) => r.images || []));
@@ -310,7 +313,7 @@
   function renderInbox() {
     const fb = $('fBiz');
     const cur = fb.value || 'all';
-    fb.innerHTML = `<option value="all">All businesses</option>` + list.map((b) => `<option value="${b.id}">${RC.esc(b.name)}</option>`).join('');
+    fb.innerHTML = `<option value="all">${tr('a.f.allBiz')}</option>` + list.map((b) => `<option value="${b.id}">${RC.esc(RC.localName(b, I18N.lang))}</option>`).join('');
     fb.value = list.some((b) => b.id === cur) ? cur : 'all';
     fb.hidden = list.length < 2;
 
@@ -318,10 +321,10 @@
     const priv = scoped.filter((r) => r.route === 'private');
     const avg = scoped.length ? (scoped.reduce((s, r) => s + r.rating, 0) / scoped.length).toFixed(1) : '–';
     $('stats').innerHTML = [
-      [scoped.length, 'Total ratings'],
-      [scoped.length - priv.length, 'Sent to Google'],
-      [priv.filter((r) => r.status !== 'resolved').length, 'Open private feedback'],
-      [avg, 'Average rating'],
+      [num(scoped.length), tr('a.stat.total')],
+      [num(scoped.length - priv.length), tr('a.stat.google')],
+      [num(priv.filter((r) => r.status !== 'resolved').length), tr('a.stat.open')],
+      [avg === '–' ? avg : num(+avg), tr('a.stat.avg')],
     ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
 
     const route = $('fRoute').value;
@@ -333,26 +336,26 @@
         <div class="fb-top">
           <span class="dots" aria-label="${r.rating} out of 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= r.rating ? 'on' : ''}"></i>`).join('')}</span>
           <b>${RC.esc(name(r.business_id))}</b>
-          <span class="tag ${r.route === 'private' ? 'priv' : 'pub'}">${r.route === 'private' ? 'Private' : 'Google'}</span>
-          ${r.status === 'resolved' ? '<span class="tag">Resolved</span>' : ''}
-          <time>${new Date(r.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</time>
+          <span class="tag ${r.route === 'private' ? 'priv' : 'pub'}">${r.route === 'private' ? tr('a.tag.private') : tr('a.tag.google')}</span>
+          ${r.status === 'resolved' ? `<span class="tag">${tr('a.tag.resolved')}</span>` : ''}
+          <time>${I18N.fmtDate(r.created_at)}</time>
         </div>
-        ${r.text ? `<p>${RC.esc(r.text)}</p>` : '<p class="muted">No comment</p>'}
+        ${r.text ? `<p dir="auto">${RC.esc(r.text)}</p>` : `<p class="muted">${tr('a.noComment')}</p>`}
         ${r.images?.length ? `<div class="fb-imgs">${r.images.map((p) => photoLinks[p] ? `<img src="${RC.esc(photoLinks[p])}" alt="Guest photo">` : '').join('')}</div>` : ''}
         ${r.route === 'google' ? `<div class="fb-foot">
-          <span class="who-line">Guest was sent to Google${RC.googleReviewsUrl(biz(r.business_id)) ? ` · <a class="link small" target="_blank" rel="noopener" href="${RC.esc(RC.googleReviewsUrl(biz(r.business_id)))}">See it on Google</a>` : ''}</span>
-          <a class="btn g-btn" target="_blank" rel="noopener" href="${RC.GOOGLE_REPLY_URL}" title="Opens your Google Business Profile reviews, where you can reply"><svg viewBox="0 0 48 48" aria-hidden="true">${document.querySelector('#openGoogleReviews svg').innerHTML}</svg>Reply on Google</a>
+          <span class="who-line">${tr('a.sentToGoogle')}${RC.googleReviewsUrl(biz(r.business_id)) ? ` · <a class="link small" target="_blank" rel="noopener" href="${RC.esc(RC.googleReviewsUrl(biz(r.business_id)))}">${tr('a.seeOnGoogle')}</a>` : ''}</span>
+          <a class="btn g-btn" target="_blank" rel="noopener" href="${RC.GOOGLE_REPLY_URL}" title="${tr('a.replyGoogle.title')}"><svg viewBox="0 0 48 48" aria-hidden="true">${document.querySelector('#openGoogleReviews svg').innerHTML}</svg>${tr('a.replyGoogle')}</a>
         </div>` : ''}
         ${r.route === 'private' ? `<div class="fb-foot">
-          <span class="who-line">${RC.esc(r.guest_name || 'Anonymous')}${r.guest_phone ? ' · ' + RC.esc(r.guest_phone) : ''}</span>
-          ${r.guest_phone ? `<a class="btn" target="_blank" rel="noopener" href="${RC.waLink(r.guest_phone, `Hi ${r.guest_name || ''}, this is ${name(r.business_id)}. Thank you for your feedback, we're sorry about your visit.`)}">Reply on WhatsApp</a>` : ''}
-          <button class="btn" data-toggle="${r.id}">${r.status === 'resolved' ? 'Reopen' : 'Mark resolved'}</button>
+          <span class="who-line">${RC.esc(r.guest_name || tr('a.anonymous'))}${r.guest_phone ? ` · <span dir="ltr">${RC.esc(r.guest_phone)}</span>` : ''}</span>
+          ${r.guest_phone ? `<a class="btn" target="_blank" rel="noopener" href="${RC.waLink(r.guest_phone, tr('a.replyWa.msg', { name: r.guest_name || '', biz: name(r.business_id) }))}">${tr('a.replyWa')}</a>` : ''}
+          <button class="btn" data-toggle="${r.id}">${r.status === 'resolved' ? tr('a.reopen') : tr('a.resolve')}</button>
         </div>` : ''}
       </article>`).join('')
-      : `<div class="card empty"><h2>Nothing here yet</h2><p class="muted">Ratings from your QR code will appear here.</p></div>`;
+      : `<div class="card empty"><h2>${tr('a.nothing.title')}</h2><p class="muted">${tr('a.nothing.text')}</p></div>`;
 
     const open = reviews.filter((r) => r.route === 'private' && r.status !== 'resolved').length;
-    $('inboxCount').hidden = !open; $('inboxCount').textContent = open;
+    $('inboxCount').hidden = !open; $('inboxCount').textContent = num(open);
   }
   $('fBiz').addEventListener('change', renderInbox);
   $('fRoute').addEventListener('change', renderInbox);
@@ -374,27 +377,27 @@
   // ---------- Settings ----------
   $('pwForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    try { await RC.updatePassword($('newPw').value); $('newPw').value = ''; toast('Password updated'); }
+    try { await RC.updatePassword($('newPw').value); $('newPw').value = ''; toast(tr('t.pwUpdated')); }
     catch (err) { toast(friendly(err)); }
   });
   $('savePublic').addEventListener('click', () => {
     const raw = $('publicUrl').value.trim();
     const v = raw ? RC.siteBase(raw) : '';
-    if (raw && !v) return toast("That doesn't look like a web address");
+    if (raw && !v) return toast(tr('t.badUrl'));
     RC.saveSettings({ ...RC.settings(), publicUrl: v });
     $('publicUrl').value = v;
-    toast('Saved. QR codes now use this address');
+    toast(tr('t.publicSaved'));
     refresh();
   });
   async function runImport(arr) {
-    if (!Array.isArray(arr) || !arr.length) return toast('No businesses found to import');
-    if (!confirm(`Import ${arr.length} business(es) into the database?`)) return;
+    if (!Array.isArray(arr) || !arr.length) return toast(tr('t.noneToImport'));
+    if (!confirm(tr('t.importConfirm', { n: num(arr.length) }))) return;
     try {
       const n = await RC.importBusinesses(arr);
       list = await RC.listBusinesses(user);
       currentId = null; dirty = false;
       if (list[0]) await select(list[0].id); else renderList();
-      toast(`Imported ${n} business(es)`);
+      toast(tr('t.imported', { n: num(n) }));
     } catch (e) { toast(friendly(e)); }
   }
   $('importLive').addEventListener('click', async () => runImport(await RC.fetchPublished()));
@@ -403,12 +406,12 @@
     try {
       const data = JSON.parse(await file.text());
       await runImport(Array.isArray(data) ? data : data.businesses);
-    } catch { toast("That file isn't a valid businesses.json"); }
+    } catch { toast(tr('t.badJson')); }
     e.target.value = '';
   });
 
   $('signOut').addEventListener('click', async () => {
-    if (dirty && !confirm('You have unsaved changes. Sign out anyway?')) return;
+    if (dirty && !confirm(tr('t.signOutDirty'))) return;
     dirty = false;
     await RC.signOut();
     location.replace('login.html');
@@ -425,25 +428,46 @@
     $('gateMsg').hidden = false;
   }
 
+  // ---------- Language ----------
+  function renderLang() {
+    document.title = tr('a.docTitle');
+    document.querySelectorAll('[data-set-lang]').forEach((b) => b.classList.toggle('primary', b.dataset.setLang === I18N.lang));
+    if (!user) return;
+    buildStaticControls();
+    if (draft) {
+      SOCIAL_KEYS.forEach((k) => (form[`social_${k}`].value = draft.social[k] || ''));
+      renderThreshold(); renderSwatches(); renderDelivery();
+      if (dirty) $('saveStatus').textContent = tr('a.st.unsaved');
+    }
+    renderList();
+    if (!$('view-inbox').hidden || reviews.length) renderInbox();
+  }
+  window.addEventListener('langchange', renderLang);
+  document.querySelectorAll('[data-set-lang]').forEach((b) => b.addEventListener('click', () => I18N.set(b.dataset.setLang)));
+  I18N.apply();
+  renderLang();
+
   // ---------- Boot ----------
   (async () => {
     if (!RC.configured) {
-      return gate(`<h2>Connect the database</h2><p>Review Finder needs its Supabase details. Add the Project URL and anon key to <code>assets/config.js</code>, then reload.</p>`);
+      return gate(`<h2>${tr('a.gate.title')}</h2><p>${tr('a.gate.text')}</p>`);
     }
     try { user = await RC.me(); } catch { user = null; }
     if (!user) { location.replace('login.html'); return; }
 
     document.body.classList.toggle('is-admin', user.isAdmin);
     $('whoEmail').textContent = user.email;
-    $('whoRole').textContent = user.isAdmin ? 'H&H admin' : 'Business owner';
+    $('whoRole').dataset.i18n = user.isAdmin ? 'a.role.admin' : 'a.role.owner';
     $('whoAv').textContent = user.email[0].toUpperCase();
     if (!user.isAdmin) {
-      $('tabBizLabel').textContent = 'My business';
-      $('bizTitle').textContent = 'My business';
-      $('bizSub').textContent = 'Customise your review page and download your QR code.';
-      $('emptyTitle').textContent = 'No business linked yet';
-      $('emptyText').textContent = 'Your login is not linked to a business yet. Please contact H&H Technology.';
+      // Business owners see "My business" wording; swap the translation keys so language changes keep it.
+      $('tabBizLabel').dataset.i18n = 'a.tab.myBusiness';
+      $('bizTitle').dataset.i18n = 'a.biz.titleClient';
+      $('bizSub').dataset.i18n = 'a.biz.subClient';
+      $('emptyTitle').dataset.i18n = 'a.empty.titleClient';
+      $('emptyText').dataset.i18n = 'a.empty.textClient';
     }
+    I18N.apply();
 
     buildStaticControls();
     try { list = await RC.listBusinesses(user); } catch (e) { toast(friendly(e)); }

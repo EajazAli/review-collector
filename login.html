@@ -7,7 +7,8 @@
   <link rel="icon" type="image/png" href="assets/brand/HH_Icon_Navy.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="assets/i18n.js"></script>
   <style>
     :root { --ink: #000212; --panel: #0B0E22; --line: #1E2238; --indigo: #4C5CF0; --body: #AEAFB0; --muted: #75758A; }
     * { box-sizing: border-box; }
@@ -35,28 +36,39 @@
     .help a { color: var(--body); }
     .setup { color: var(--body); font-size: 14.5px; line-height: 1.55; }
     .setup code { background: var(--ink); padding: 1px 6px; border-radius: 6px; }
+    .card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 26px; }
+    .card-top .logo { margin-bottom: 0; }
+    .lang { border: 1px solid var(--line); background: transparent; color: var(--body); border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 13.5px; cursor: pointer; }
+    .lang:hover { color: #fff; border-color: #2E3352; }
+    .lang[lang="ar"] { font-family: 'Noto Sans Arabic', sans-serif; }
+    .lang[lang="en"] { font-family: Urbanist, Arial, sans-serif; }
+    html[lang="ar"] body { font-family: 'Noto Sans Arabic', Urbanist, Arial, sans-serif; }
+    html[lang="ar"] h1 { font-family: 'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif; }
+    html[lang="ar"] * { letter-spacing: 0 !important; }
+    input[type="email"], input[type="password"] { direction: ltr; text-align: start; }
+    html[lang="ar"] input[type="email"], html[lang="ar"] input[type="password"] { text-align: right; }
   </style>
 </head>
 <body>
   <div class="glow" aria-hidden="true"></div>
   <main class="card">
-    <img class="logo" src="assets/brand/HH_Logo_Primary_Reverse_White.png" alt="H&amp;H Technology" />
+    <div class="card-top">
+      <img class="logo" src="assets/brand/HH_Logo_Primary_Reverse_White.png" alt="H&amp;H Technology" />
+      <button class="lang" type="button" data-lang-toggle>العربية</button>
+    </div>
     <h1>Review <em>Finder</em></h1>
-    <p class="sub">Sign in to see your reviews and customise your QR code.</p>
+    <p class="sub" data-i18n="l.sub">Sign in to see your reviews and customise your QR code.</p>
 
     <form id="form" hidden>
-      <label>Email<input id="email" type="email" autocomplete="username" required /></label>
-      <label>Password<input id="password" type="password" autocomplete="current-password" required /></label>
-      <button id="go" type="submit">Sign in</button>
+      <label><span data-i18n="l.email">Email</span><input id="email" type="email" autocomplete="username" required /></label>
+      <label><span data-i18n="l.password">Password</span><input id="password" type="password" autocomplete="current-password" required /></label>
+      <button id="go" type="submit" data-i18n="l.signIn">Sign in</button>
       <p class="msg" id="msg" role="alert"></p>
     </form>
 
-    <p class="setup" id="setup" hidden>
-      Review Finder isn't connected to its database yet. Add your Supabase details to <code>assets/config.js</code>.
-    </p>
+    <p class="setup" id="setup" hidden data-i18n-html="l.setup">Review Finder isn't connected to its database yet. Add your Supabase details to <code>assets/config.js</code>.</p>
 
-    <p class="help">No login yet, or forgot your password? Contact H&amp;H Technology on
-      <a href="https://wa.me/966504920373" target="_blank" rel="noopener">WhatsApp +966 504 920 373</a>.</p>
+    <p class="help" data-i18n-html="l.help">No login yet, or forgot your password? Contact H&amp;H Technology on <a href="https://wa.me/966504920373" target="_blank" rel="noopener">WhatsApp +966 504 920 373</a>.</p>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -65,19 +77,41 @@
   <script>
     (async () => {
       const $ = (id) => document.getElementById(id);
+      const t = (k) => I18N.t(k);
+      I18N.add({
+        en: {
+          'l.title': 'Sign in · Review Finder',
+          'l.sub': 'Sign in to see your reviews and customise your QR code.',
+          'l.email': 'Email', 'l.password': 'Password', 'l.signIn': 'Sign in', 'l.signingIn': 'Signing in…',
+          'l.wrong': 'Wrong email or password.',
+          'l.setup': "Review Finder isn't connected to its database yet. Add your Supabase details to <code>assets/config.js</code>.",
+          'l.help': 'No login yet, or forgot your password? Contact H&amp;H Technology on <a href="https://wa.me/966504920373" target="_blank" rel="noopener"><span style="white-space:nowrap">WhatsApp +966 504 920 373</span></a>.',
+        },
+        ar: {
+          'l.title': 'تسجيل الدخول · Review Finder',
+          'l.sub': 'سجّل دخولك لمتابعة تقييماتك وتخصيص رمز QR الخاص بك.',
+          'l.email': 'البريد الإلكتروني', 'l.password': 'كلمة المرور', 'l.signIn': 'تسجيل الدخول', 'l.signingIn': 'جارٍ تسجيل الدخول…',
+          'l.wrong': 'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+          'l.setup': 'لم يتم ربط Review Finder بقاعدة البيانات بعد. أضف بيانات Supabase في <code>assets/config.js</code>.',
+          'l.help': 'ليس لديك حساب أو نسيت كلمة المرور؟ تواصل مع H&amp;H Technology عبر <a href="https://wa.me/966504920373" target="_blank" rel="noopener">واتساب <span dir="ltr" style="white-space:nowrap">+966 504 920 373</span></a>.',
+        },
+      });
+      const setTitle = () => { document.title = t('l.title'); };
+      I18N.apply(); setTitle();
+      window.addEventListener('langchange', setTitle);
       if (!RC.configured) { $('setup').hidden = false; return; }
       if (await RC.session()) { location.replace('admin.html'); return; }
       $('form').hidden = false;
       $('email').focus();
       $('form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        $('go').disabled = true; $('go').textContent = 'Signing in…'; $('msg').textContent = '';
+        $('go').disabled = true; $('go').textContent = t('l.signingIn'); $('msg').textContent = '';
         try {
           await RC.signIn($('email').value, $('password').value);
           location.replace('admin.html');
         } catch (err) {
-          $('msg').textContent = /invalid/i.test(err.message) ? 'Wrong email or password.' : err.message;
-          $('go').disabled = false; $('go').textContent = 'Sign in';
+          $('msg').textContent = /invalid/i.test(err.message) ? t('l.wrong') : err.message;
+          $('go').disabled = false; $('go').textContent = t('l.signIn');
         }
       });
     })();

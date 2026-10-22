@@ -3,7 +3,9 @@
   const params = new URLSearchParams(location.search);
   const isPreview = params.has('preview');
 
-  const MOODS = ['Tap a dot to rate', 'Terrible', 'Not great', 'It was okay', 'Really good', 'Loved it!'];
+  const t = (k, v) => I18N.t(k, v);
+  const mood = (r) => t(`r.mood.${r}`);
+  const starsText = (n) => (n === 1 ? t('r.stars.1') : n === 2 ? t('r.stars.2') : t('r.stars.n', { n: I18N.fmtNum(n) }));
   // Face keyframes per rating (0 = not rated yet)
   // mouth: x1 y1 cx cy x2 y2 | eyeRy | brow: lx1 ly1 lx2 ly2 | browOpacity | cheekOpacity
   const FACES = [
@@ -20,22 +22,36 @@
   let photos = [];
   let face = structuredClone(FACES[0]);
   let anim = 0;
+  let doneKind = null;     // which thank-you screen is showing (re-rendered on language change)
+  let sheetCopied = null;  // state of the Google steps sheet
 
   // ---------- Theme & content ----------
   function applyBusiness(b) {
     biz = b;
-    const t = b.theme || RC.THEMES.sunset;
+    const th = b.theme || RC.THEMES.sunset;
     const root = document.documentElement.style;
-    root.setProperty('--from', t.from); root.setProperty('--to', t.to);
-    root.setProperty('--ink', t.ink || '#fff'); root.setProperty('--face', t.face || '#1E1A17');
-    document.querySelector('meta[name=theme-color]').content = t.to;
-    document.title = `Rate ${b.name || 'your visit'}`;
-
-    $('bizName').textContent = b.name || 'Your business';
+    root.setProperty('--from', th.from); root.setProperty('--to', th.to);
+    root.setProperty('--ink', th.ink || '#fff'); root.setProperty('--face', th.face || '#1E1A17');
+    document.querySelector('meta[name=theme-color]').content = th.to;
     $('logo').innerHTML = b.logo ? `<img src="${RC.esc(b.logo)}" alt="">` : RC.esc(RC.initials(b.name));
-    $('tagline').textContent = b.tagline || '';
+    renderText();
+  }
+
+  // Business name and subtitle in the guest's language (Arabic versions are optional per business).
+  const bizName = () => RC.localName(biz, I18N.lang) || t('r.thisPlace');
+  function renderText() {
+    if (!biz) return;
+    const name = RC.localName(biz, I18N.lang);
+    document.title = name ? t('r.docTitle', { name }) : t('r.docTitleDefault');
+    $('bizName').textContent = name;
+    $('tagline').textContent = RC.localTagline(biz, I18N.lang) || t('r.taglineDefault');
+    renderDots();
     renderSocials();
+    renderThumbs();
     setRating(rating, false);
+    if (doneKind) showDone(doneKind);
+    if (!$('sheet').hidden) renderSheet();
+    $('choiceMgmtTitle').textContent = t('r.choice.mgmt', { name: bizName() });
   }
 
   function renderDots() {
@@ -46,17 +62,21 @@
       btn.type = 'button';
       btn.className = 'dot';
       btn.setAttribute('role', 'radio');
-      btn.setAttribute('aria-label', `${i} out of 5 — ${MOODS[i]}`);
-      btn.innerHTML = `<span>${i}</span>`;
+      btn.setAttribute('aria-label', t('r.dotAria', { n: I18N.fmtNum(i), mood: mood(i) }));
+      btn.innerHTML = `<span>${I18N.fmtNum(i)}</span>`;
       btn.addEventListener('click', () => setRating(i));
       wrap.appendChild(btn);
     }
-    wrap.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { setRating(Math.min(5, rating + 1)); e.preventDefault(); }
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { setRating(Math.max(1, rating - 1)); e.preventDefault(); }
-      wrap.querySelectorAll('.dot')[Math.max(0, rating - 1)]?.focus();
-    });
   }
+  // Arrow keys follow the reading direction (right = higher in English, left = higher in Arabic).
+  $('rating').addEventListener('keydown', (e) => {
+    const rtl = I18N.lang === 'ar';
+    const up = e.key === 'ArrowUp' || e.key === (rtl ? 'ArrowLeft' : 'ArrowRight');
+    const down = e.key === 'ArrowDown' || e.key === (rtl ? 'ArrowRight' : 'ArrowLeft');
+    if (up) { setRating(Math.min(5, rating + 1)); e.preventDefault(); }
+    if (down) { setRating(Math.max(1, rating - 1)); e.preventDefault(); }
+    $('rating').querySelectorAll('.dot')[Math.max(0, rating - 1)]?.focus();
+  });
 
   const isPublic = () => rating >= (biz?.threshold || 4);
 
@@ -68,28 +88,28 @@
       d.setAttribute('aria-checked', String(i === r - 1));
       d.tabIndex = (i === Math.max(0, r - 1)) ? 0 : -1;
     });
-    const mood = $('mood');
-    mood.textContent = MOODS[r];
-    mood.classList.add('pop'); setTimeout(() => mood.classList.remove('pop'), 180);
+    const moodEl = $('mood');
+    moodEl.textContent = mood(r);
+    moodEl.classList.add('pop'); setTimeout(() => moodEl.classList.remove('pop'), 180);
     morphFace(FACES[r], animate);
 
     const cta = $('cta');
     // Google's rules: every guest must be free to review on Google, whatever their rating.
     $('gAnyway').hidden = !r || isPublic() || !RC.googleLink(biz || {});
-    if (!r) { cta.disabled = true; cta.textContent = 'Submit'; $('details').hidden = true; return; }
+    if (!r) { cta.disabled = true; cta.textContent = t('r.submit'); $('details').hidden = true; return; }
     $('details').hidden = false;
     cta.disabled = false;
     if (isPublic()) {
       cta.className = 'cta google';
-      cta.innerHTML = `<svg class="g" viewBox="0 0 48 48" aria-hidden="true">${document.querySelector('.g-logo svg').innerHTML}</svg>Post to Google!`;
-      $('textLabel').textContent = 'What did you love?';
-      $('text').placeholder = "A few words help others find us. We'll copy it so you can paste it on Google.";
+      cta.innerHTML = `<svg class="g" viewBox="0 0 48 48" aria-hidden="true">${document.querySelector('.g-logo svg').innerHTML}</svg>${t('r.postGoogle')}`;
+      $('textLabel').textContent = t('r.text.labelGood');
+      $('text').placeholder = t('r.text.phGood');
       $('privateFields').hidden = true;
     } else {
       cta.className = 'cta';
-      cta.textContent = 'Send';
-      $('textLabel').textContent = 'What went wrong?';
-      $('text').placeholder = 'Tell us what happened. This goes privately to the owner, not online.';
+      cta.textContent = t('r.send');
+      $('textLabel').textContent = t('r.text.labelBad');
+      $('text').placeholder = t('r.text.phBad');
       $('privateFields').hidden = false;
     }
   }
@@ -131,15 +151,15 @@
   $('photos').addEventListener('change', async (e) => {
     const files = [...e.target.files].slice(0, 4 - photos.length);
     for (const f of files) {
-      try { photos.push(await RC.resizeImage(f)); } catch { toast("Couldn't read that image"); }
+      try { photos.push(await RC.resizeImage(f)); } catch { toast(t('r.toast.badImg')); }
     }
-    if (e.target.files.length > files.length) toast('Up to 4 photos');
+    if (e.target.files.length > files.length) toast(t('r.toast.max4'));
     e.target.value = '';
     renderThumbs();
   });
   function renderThumbs() {
     $('thumbs').innerHTML = photos.map((src, i) =>
-      `<div class="thumb"><img src="${src}" alt="Attached photo ${i + 1}"><button type="button" data-i="${i}" aria-label="Remove photo">×</button></div>`).join('');
+      `<div class="thumb"><img src="${src}" alt="${t('r.photoAlt', { n: i + 1 })}"><button type="button" data-i="${i}" aria-label="${t('r.removePhoto')}">×</button></div>`).join('');
   }
   $('thumbs').addEventListener('click', (e) => {
     const i = e.target.dataset?.i;
@@ -150,32 +170,33 @@
   $('cta').addEventListener('click', async () => {
     if (!rating || !biz) return;
     const text = $('text').value.trim();
-    const item = { rating, route: isPublic() ? 'google' : 'private', text };
+    const item = { rating, route: isPublic() ? 'google' : 'private', text, lang: I18N.lang };
 
     if (isPublic()) { await openGoogle(item); return; }
 
-    if (!text && !photos.length) { toast('Please tell us a little about what happened'); $('text').focus(); return; }
+    if (!text && !photos.length) { toast(t('r.toast.tellUs')); $('text').focus(); return; }
     Object.assign(item, { guestName: $('guestName').value.trim(), guestPhone: $('guestPhone').value.trim() });
-    if (isPreview) { toast('Preview only, nothing was sent'); return; }
+    if (isPreview) { toast(t('r.toast.preview')); return; }
 
     const cta = $('cta');
-    cta.classList.add('busy'); cta.textContent = 'Sending…';
+    cta.classList.add('busy'); cta.textContent = t('r.sending');
     const res = await RC.submitReview(biz, item, photos);
     await RC.deliver(biz, { ...res.review, slug: biz.slug, photos: photos.length ? photos : undefined });
-    cta.classList.remove('busy'); cta.textContent = 'Send';
+    cta.classList.remove('busy'); cta.textContent = t('r.send');
 
     // Alert the owner on WhatsApp (text only; photos are in their dashboard).
     const owner = (biz.whatsapp || []).find(Boolean);
     if (!biz.webhookUrl && owner) {
-      const msg = `LOW RATING ${rating}/5 - feedback for ${biz.name}
-
-${text || '(no comment)'}` +
-        (item.guestName || item.guestPhone ? `
-
-From: ${[item.guestName, item.guestPhone].filter(Boolean).join(' · ')}` : '') +
-        (photos.length ? `
-
-${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review Finder dashboard.` : '');
+      const who = [item.guestName, item.guestPhone].filter(Boolean).join(' · ');
+      const msg = [
+        `LOW RATING ${rating}/5 | تقييم منخفض ${rating}/5`,
+        biz.name,
+        '',
+        text || '(no comment / بدون تعليق)',
+        who ? `\nFrom / من: ${who}` : '',
+        photos.length ? `\n${photos.length} photo(s) / صور: see your Review Finder dashboard / راجع لوحة Review Finder` : '',
+        I18N.lang === 'ar' ? '\n(Guest used Arabic / الضيف استخدم العربية)' : '',
+      ].filter((x) => x !== '').join('\n');
       const url = RC.waLink(owner, msg);
       $('waRetry').href = url;
       $('waRetry').hidden = false;
@@ -190,18 +211,23 @@ ${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review
   async function openGoogle(item, record = true) {
     let copied = false;
     if (item.text) { try { await navigator.clipboard.writeText(item.text); copied = true; } catch { /* clipboard blocked */ } }
-    $('stepCopy').innerHTML = copied ? '<b>Your review is copied.</b>' : (item.text ? 'Copy your review text first.' : 'Write a few words about your visit.');
-    $('sheetStars').textContent = `${item.rating} star${item.rating > 1 ? 's' : ''}`;
+    sheetCopied = copied ? 'copied' : (item.text ? 'copyFirst' : 'writeFew');
     $('toGoogle').href = RC.googleLink(biz) || '#';
+    renderSheet();
     $('sheet').hidden = false;
     if (record && !isPreview) {
-      RC.submitReview(biz, { ...item, route: 'google' }).then(({ review }) => RC.deliver(biz, { ...review, slug: biz.slug }));
+      RC.submitReview(biz, { ...item, route: 'google', lang: I18N.lang }).then(({ review }) => RC.deliver(biz, { ...review, slug: biz.slug }));
     }
+  }
+
+  function renderSheet() {
+    $('stepCopy').innerHTML = t(`r.sheet.${sheetCopied || 'writeFew'}`);
+    $('stepStars').innerHTML = t('r.sheet.stars', { stars: RC.esc(starsText(rating || 5)) });
   }
 
   // Second layer for low ratings: Google is always an option, and so is the management.
   $('gAnyway').addEventListener('click', () => {
-    $('choiceBiz').textContent = biz.name || 'this business';
+    $('choiceMgmtTitle').textContent = t('r.choice.mgmt', { name: bizName() });
     $('choice').hidden = false;
   });
   $('choiceGoogle').addEventListener('click', async () => {
@@ -211,7 +237,7 @@ ${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review
   $('choiceMgmt').addEventListener('click', () => {
     $('choice').hidden = true;
     $('text').focus();
-    toast('Tell the management what happened, then tap Send');
+    toast(t('r.toast.tellMgmt'));
   });
   $('choiceClose').addEventListener('click', () => { $('choice').hidden = true; });
   $('choice').addEventListener('click', (e) => { if (e.target === $('choice')) $('choice').hidden = true; });
@@ -219,7 +245,7 @@ ${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review
   $('gAfter').addEventListener('click', () => openGoogle({ rating, text: $('text').value.trim() }, false));
 
   $('toGoogle').addEventListener('click', (e) => {
-    if ($('toGoogle').getAttribute('href') === '#') { e.preventDefault(); toast('Google link not set up yet'); return; }
+    if ($('toGoogle').getAttribute('href') === '#') { e.preventDefault(); toast(t('r.toast.noGoogle')); return; }
     setTimeout(() => { $('sheet').hidden = true; if ($('done').hidden) showDone('google'); }, 300);
   });
   $('sheetClose').addEventListener('click', () => { $('sheet').hidden = true; });
@@ -228,24 +254,21 @@ ${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review
   $('again').addEventListener('click', reset);
 
   function showDone(kind) {
-    const name = biz.name || 'us';
-    const copy = {
-      google: ['Thank you!', `Your review means the world to ${name}. See you again soon.`],
-      private: ["Thanks for telling us", `Your message went straight to the owner of ${name}. We'll make it right.`],
-      skip: ['Thanks for visiting', `Follow ${name} for news and offers.`],
-    }[kind];
+    const wasShowing = doneKind;
+    doneKind = kind;
     $('gAfter').hidden = kind !== 'private' || !RC.googleLink(biz);
-    $('doneTitle').textContent = copy[0];
-    $('doneText').textContent = copy[1];
+    $('doneTitle').textContent = t(`r.done.${kind}.t`);
+    $('doneText').textContent = t(`r.done.${kind}.x`, { name: bizName() });
     $('rate').hidden = true;
     $('done').hidden = false;
-    scrollTo(0, 0);
+    if (!wasShowing) scrollTo(0, 0);
   }
 
   function reset() {
     photos = []; renderThumbs(); $('waRetry').hidden = true;
     $('text').value = ''; $('guestName').value = ''; $('guestPhone').value = '';
     setRating(0, false);
+    doneKind = null;
     $('done').hidden = true; $('rate').hidden = false;
   }
 
@@ -260,8 +283,8 @@ ${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review
   function renderSocials() {
     const links = Object.entries(biz.social || {}).filter(([, v]) => v && v.trim());
     $('socials').innerHTML = links.length
-      ? `<span class="label">Follow us</span>` + links.map(([k, v]) =>
-        `<a class="social" href="${RC.esc(RC.SOCIAL[k].url(v.trim()))}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>${RC.SOCIAL[k].label}</a>`).join('')
+      ? `<span class="label">${t('r.followUs')}</span>` + links.map(([k, v]) =>
+        `<a class="social" href="${RC.esc(RC.SOCIAL[k].url(v.trim()))}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>${t(`social.${k}`)}</a>`).join('')
       : '';
   }
 
@@ -281,7 +304,13 @@ ${photos.length} photo${photos.length > 1 ? 's' : ''} attached - see your Review
     if (e.data.showDone) showDone('google');
   });
 
+  // ---------- Language ----------
+  window.addEventListener('langchange', renderText);
+  // The dashboard's live preview follows the language chosen in the dashboard.
+  window.addEventListener('storage', (e) => { if (e.key === 'rf.lang' && e.newValue) I18N.set(e.newValue, false); });
+
   // ---------- Boot ----------
+  I18N.apply();
   renderDots();
   drawFace(face);
   (async () => {

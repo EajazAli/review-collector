@@ -145,3 +145,7 @@ create policy photos_upload on storage.objects for insert to anon, authenticated
 drop policy if exists photos_read on storage.objects;
 create policy photos_read on storage.objects for select to authenticated
   using (bucket_id = 'review-photos' and public.is_member(((storage.foldername(name))[1])::uuid));
+
+-- Arabic business name / subtitle (also in 002_arabic.sql)
+alter table public.businesses add column if not exists name_ar    text not null default '';
+alter table public.businesses add column if not exists tagline_ar text not null default '';

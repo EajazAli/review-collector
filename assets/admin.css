@@ -300,3 +300,34 @@ input[readonly] { opacity: .65; cursor: not-allowed; }
 
 a.btn { text-decoration: none; color: inherit; }
 a.btn.primary { color: #fff; }
+
+/* ---------- Language toggle + Arabic / RTL ---------- */
+.nav-lang {
+  align-self: flex-start; margin: 0 10px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.04); color: #fff;
+  border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 13.5px; cursor: pointer;
+}
+.nav-lang:hover { background: rgba(255,255,255,.1); }
+[data-lang-toggle][lang="ar"], .lang-pick [lang="ar"] { font-family: 'Noto Sans Arabic', sans-serif; }
+[data-lang-toggle][lang="en"], .lang-pick [lang="en"] { font-family: Urbanist, Arial, sans-serif; }
+.lang-pick .btn { flex: 0 0 auto; min-width: 120px; }
+.lang-note { margin: 0; }
+.tc-ar { display: block; font-family: 'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif; font-size: 13px; margin-top: 4px; letter-spacing: 0; }
+.prefix { direction: ltr; }
+input[name="nameAr"], input[name="taglineAr"] { font-family: 'Noto Sans Arabic', Urbanist, sans-serif; }
+
+html[lang="ar"] body { font-family: 'Noto Sans Arabic', Urbanist, Arial, sans-serif; }
+html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] .product, html[lang="ar"] .stat b {
+  font-family: 'Noto Kufi Arabic', 'Noto Sans Arabic', Urbanist, sans-serif;
+}
+html[lang="ar"] * { letter-spacing: 0 !important; }
+
+html[dir="rtl"] .nav { border-right: 0; border-left: 1px solid var(--line); }
+html[dir="rtl"] .tab, html[dir="rtl"] .biz { text-align: right; }
+html[dir="rtl"] .pill, html[dir="rtl"] .savebar .status, html[dir="rtl"] .fb time, html[dir="rtl"] .who-out { margin-left: 0; margin-right: auto; }
+html[dir="rtl"] .fb-foot .who-line { margin-right: 0; margin-left: auto; }
+html[dir="rtl"] .brand { align-items: flex-start; }
+@media (max-width: 860px) {
+  .nav-lang { margin: 0; align-self: center; flex: none; }
+  html[dir="rtl"] .nav { border-left: 0; }
+  html[dir="rtl"] .who { margin: 0 auto 0 0; }
+}

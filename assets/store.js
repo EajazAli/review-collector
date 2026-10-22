@@ -41,7 +41,9 @@ const RC = (() => {
   const newBusiness = () => ({
     slug: '',
     name: '',
-    tagline: 'Your feedback helps us get better every day.',
+    tagline: '',
+    nameAr: '',
+    taglineAr: '',
     logo: '',
     theme: { preset: 'sunset', ...THEMES.sunset },
     threshold: 4,
@@ -53,14 +55,14 @@ const RC = (() => {
 
   // ---------- Row mapping ----------
   const fromRow = (r) => ({
-    id: r.id, slug: r.slug, name: r.name, tagline: r.tagline, logo: r.logo,
+    id: r.id, slug: r.slug, name: r.name, tagline: r.tagline, nameAr: r.name_ar || '', taglineAr: r.tagline_ar || '', logo: r.logo,
     theme: { ...THEMES.sunset, ...(r.theme || {}) }, threshold: r.threshold,
     googleReviewUrl: r.google_review_url, whatsapp: [...(r.whatsapp || []), '', ''].slice(0, 2),
     webhookUrl: r.webhook_url, social: { ...EMPTY_SOCIAL, ...(r.social || {}) },
     createdAt: r.created_at, updatedAt: r.updated_at,
   });
   const toRow = (b) => ({
-    slug: b.slug, name: b.name || '', tagline: b.tagline || '', logo: b.logo || '',
+    slug: b.slug, name: b.name || '', tagline: b.tagline || '', name_ar: b.nameAr || '', tagline_ar: b.taglineAr || '', logo: b.logo || '',
     theme: b.theme || {}, threshold: +b.threshold || 4,
     google_review_url: b.googleReviewUrl || '', whatsapp: (b.whatsapp || ['', '']).map((x) => (x || '').trim()),
     webhook_url: b.webhookUrl || '', social: b.social || {},
@@ -132,14 +134,23 @@ const RC = (() => {
   }
 
   async function createBusiness(b) {
-    const { data, error } = await sb.from('businesses').insert(toRow(b)).select().single();
+    let { data, error } = await sb.from('businesses').insert(toRow(b)).select().single();
+    if (error?.code === '42703') {
+      const { name_ar, tagline_ar, ...rest } = toRow(b);
+      ({ data, error } = await sb.from('businesses').insert(rest).select().single());
+    }
     fail(error);
     return fromRow(data);
   }
 
   async function saveBusiness(b) {
     if (b.logo && b.logo.startsWith('data:')) b = { ...b, logo: await uploadLogo(b.id, b.logo) };
-    const { data, error } = await sb.from('businesses').update(toRow(b)).eq('id', b.id).select().single();
+    let { data, error } = await sb.from('businesses').update(toRow(b)).eq('id', b.id).select().single();
+    // Database not yet updated with supabase/002_arabic.sql: save everything except the Arabic fields.
+    if (error?.code === '42703') {
+      const { name_ar, tagline_ar, ...rest } = toRow(b);
+      ({ data, error } = await sb.from('businesses').update(rest).eq('id', b.id).select().single());
+    }
     fail(error);
     return fromRow(data);
   }
@@ -214,6 +225,16 @@ const RC = (() => {
     const { data, error } = await sb.storage.from('review-photos').createSignedUrls(paths, 3600);
     if (error) return {};
     return Object.fromEntries(data.filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+  }
+
+  // Business text in the guest's language. Arabic falls back to the English name; the subtitle
+  // falls back to a built-in default so an English line never appears on an Arabic page.
+  const DEFAULT_TAGLINE_EN = 'Your feedback helps us get better every day.';
+  const localName = (b, lang) => ((lang === 'ar' && b.nameAr) || b.name || '').trim();
+  function localTagline(b, lang) {
+    if (lang === 'ar') return (b.taglineAr || '').trim();
+    const v = (b.tagline || '').trim();
+    return v === DEFAULT_TAGLINE_EN ? '' : v;
   }
 
   // ---------- Links & helpers ----------
@@ -303,6 +324,6 @@ const RC = (() => {
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
     listMembers, setMembers, submitReview, listReviews, updateReview, photoUrls,
-    googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
+    localName, localTagline, googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
   };
 })();

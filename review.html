@@ -8,8 +8,10 @@
   <link rel="icon" type="image/png" href="assets/brand/HH_Icon_Navy.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/review.css" />
+  <script src="assets/i18n.js"></script>
+  <script src="assets/i18n-review.js"></script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="gmark" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></symbol></svg>
@@ -22,11 +24,14 @@
         <div class="logo" id="logo"></div>
         <span class="biz-name" id="bizName"></span>
       </div>
-      <button class="skip" id="skip" type="button">Skip</button>
+      <div class="top-actions">
+        <button class="lang" type="button" data-lang-toggle>العربية</button>
+        <button class="skip" id="skip" type="button" data-i18n="r.skip">Skip</button>
+      </div>
     </header>
 
     <section class="intro">
-      <h1>Please rate your<br />experience</h1>
+      <h1 data-i18n-html="r.title">Please rate your<br />experience</h1>
       <p id="tagline"></p>
     </section>
 
@@ -45,7 +50,7 @@
       <p class="mood" id="mood" aria-live="polite">Tap a dot to rate</p>
     </section>
 
-    <div class="rating" id="rating" role="radiogroup" aria-label="Rating out of 5"></div>
+    <div class="rating" id="rating" role="radiogroup" data-i18n-aria="r.ratingGroup"></div>
 
     <form class="details" id="details" hidden>
       <label class="field">
@@ -58,25 +63,25 @@
           <label class="attach">
             <input id="photos" type="file" accept="image/*" multiple />
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3l2-2h6l2 2h3v12H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
-            <span>Add photos</span>
+            <span data-i18n="r.photos">Add photos</span>
           </label>
           <div class="thumbs" id="thumbs"></div>
         </div>
         <div class="row">
-          <label class="field"><span class="label">Name (optional)</span><input id="guestName" autocomplete="name" /></label>
-          <label class="field"><span class="label">WhatsApp / phone (optional)</span><input id="guestPhone" type="tel" autocomplete="tel" inputmode="tel" /></label>
+          <label class="field"><span class="label" data-i18n="r.name">Name (optional)</span><input id="guestName" autocomplete="name" /></label>
+          <label class="field"><span class="label" data-i18n="r.phone">WhatsApp / phone (optional)</span><input id="guestPhone" type="tel" autocomplete="tel" inputmode="tel" /></label>
         </div>
-        <p class="hint">Only the owner sees this. They can reach out and make it right.</p>
+        <p class="hint" data-i18n="r.hint">Only the owner sees this. They can reach out and make it right.</p>
       </div>
     </form>
 
     <div class="cta-wrap">
       <button class="cta" id="cta" type="button" disabled>Submit</button>
-      <button class="link-g" id="gAnyway" type="button" hidden>Prefer Google? <u>Post it to Google</u></button>
+      <button class="link-g" id="gAnyway" type="button" hidden data-i18n-html="r.gAnyway">Prefer Google? <u>Post it to Google</u></button>
     </div>
     <footer class="powered">
       <span class="hh" aria-hidden="true"></span>
-      <span>Review Finder by <a href="https://www.hnhmena.com" target="_blank" rel="noopener">H&amp;H Technology</a></span>
+      <span data-i18n-html="r.powered">Review Finder by <a href="https://www.hnhmena.com" target="_blank" rel="noopener">H&amp;H Technology</a></span>
     </footer>
   </main>
 
@@ -90,23 +95,24 @@
       <p id="doneText"></p>
       <a class="cta solid wa" id="waRetry" href="#" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.3-.5 0-1 .2-3.3-.7-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>
-        Send to the owner on WhatsApp
+        <span data-i18n="r.waRetry">Send to the owner on WhatsApp</span>
       </a>
       <div class="socials" id="socials"></div>
-      <button class="link-g" id="gAfter" type="button" hidden>You can also <u>post it to Google</u></button>
-      <button class="ghost" id="again" type="button">Back</button>
+      <button class="link-g" id="gAfter" type="button" hidden data-i18n-html="r.gAfter">You can also <u>post it to Google</u></button>
+      <button class="ghost" id="again" type="button" data-i18n="r.back">Back</button>
     </div>
     <footer class="powered">
       <span class="hh" aria-hidden="true"></span>
-      <span>Review Finder by <a href="https://www.hnhmena.com" target="_blank" rel="noopener">H&amp;H Technology</a></span>
+      <span data-i18n-html="r.powered">Review Finder by <a href="https://www.hnhmena.com" target="_blank" rel="noopener">H&amp;H Technology</a></span>
     </footer>
   </main>
 
   <!-- Not found -->
   <main class="screen done" id="missing" hidden>
     <div class="done-inner">
-      <h1>Page not found</h1>
-      <p>This review link isn't active. Please ask the staff for a new QR code.</p>
+      <button class="lang" type="button" data-lang-toggle>العربية</button>
+      <h1 data-i18n="r.missing.title">Page not found</h1>
+      <p data-i18n="r.missing.text">This review link isn't active. Please ask the staff for a new QR code.</p>
     </div>
   </main>
 
@@ -117,14 +123,14 @@
       <div class="g-logo" aria-hidden="true">
         <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
       </div>
-      <h2 id="sheetTitle">Almost there!</h2>
+      <h2 id="sheetTitle" data-i18n="r.sheet.title">Almost there!</h2>
       <ol class="steps">
         <li id="stepCopy"><b>Your review is copied.</b></li>
-        <li>On Google, tap <b id="sheetStars">5 stars</b>.</li>
-        <li>Long-press the text box and tap <b>Paste</b>.</li>
+        <li id="stepStars"></li>
+        <li data-i18n-html="r.sheet.paste">Long-press the text box and tap <b>Paste</b>.</li>
       </ol>
-      <a class="cta solid" id="toGoogle" href="#" target="_blank" rel="noopener">Continue to Google</a>
-      <button class="link" id="sheetClose" type="button">Not now</button>
+      <a class="cta solid" id="toGoogle" href="#" target="_blank" rel="noopener" data-i18n="r.sheet.go">Continue to Google</a>
+      <button class="link" id="sheetClose" type="button" data-i18n="r.sheet.notNow">Not now</button>
     </div>
   </div>
 
@@ -133,15 +139,15 @@
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="choiceTitle">
       <div class="grab"></div>
       <div class="g-logo" aria-hidden="true"><svg viewBox="0 0 48 48"><use href="#gmark" /></svg></div>
-      <h2 id="choiceTitle">Post your review on Google</h2>
-      <p class="sheet-text">You're always welcome to share your experience on Google.</p>
+      <h2 id="choiceTitle" data-i18n="r.choice.title">Post your review on Google</h2>
+      <p class="sheet-text" data-i18n="r.choice.text">You're always welcome to share your experience on Google.</p>
       <div class="mgmt">
-        <b>You can also reach the management of <span id="choiceBiz"></span></b>
-        <span>They read every message personally and can make it right, often before you leave.</span>
+        <b id="choiceMgmtTitle"></b>
+        <span data-i18n="r.choice.mgmtSub">They read every message personally and can make it right, often before you leave.</span>
       </div>
-      <button class="cta solid" id="choiceGoogle" type="button">Post it to Google</button>
-      <button class="cta outline" id="choiceMgmt" type="button">Message the management</button>
-      <button class="link" id="choiceClose" type="button">Cancel</button>
+      <button class="cta solid" id="choiceGoogle" type="button" data-i18n="r.choice.google">Post it to Google</button>
+      <button class="cta outline" id="choiceMgmt" type="button" data-i18n="r.choice.message">Message the management</button>
+      <button class="link" id="choiceClose" type="button" data-i18n="r.cancel">Cancel</button>
     </div>
   </div>
 
