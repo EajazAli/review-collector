@@ -290,7 +290,8 @@ const RC = (() => {
       return u.origin + path;
     } catch { return ''; }
   }
-  const reviewUrl = (b) => `${siteBase(settings().publicUrl)}review.html?b=${encodeURIComponent(b.slug)}`;
+  // QR codes: this browser's override (Settings) > the site-wide PUBLIC_URL in config.js > the current address.
+  const reviewUrl = (b) => `${siteBase(settings().publicUrl || cfg.PUBLIC_URL)}review.html?b=${encodeURIComponent(b.slug)}`;
 
   async function deliver(b, payload) {
     if (!b.webhookUrl) return { ok: false, reason: 'no-webhook' };
