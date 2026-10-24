@@ -33,14 +33,16 @@
   };
   let rating = 0;
   let photos = [];
-  // Before a star is chosen the face switches between happy and curious.
-  // br = right brow (otherwise mirrored from the left), tilt = head tilt in degrees.
+  // Before a star is chosen the face loops through three happy expressions.
+  // ryR = right eye (wink), br = right brow (otherwise mirrored), tilt = head tilt in degrees.
+  // Every idle face smiles upwards with brows hidden, so none can read as sad.
   const IDLE = [
-    { m: [66, 100, 100, 132, 134, 100], ry: 11, b: [44, 30, 80, 30], bo: 0, c: .4, tilt: 3 },                            // happy
-    { m: [86, 112, 102, 106, 118, 112], ry: 14, b: [42, 22, 80, 18], br: [158, 38, 120, 38], bo: 1, c: 0, tilt: -7 },  // curious
+    { m: [66, 100, 100, 132, 134, 100], ry: 11, b: [44, 30, 80, 30], bo: 0, c: .4, tilt: 3 },            // big smile
+    { m: [70, 102, 100, 126, 130, 98], ry: 12, ryR: 2.5, b: [44, 30, 80, 30], bo: 0, c: .3, tilt: -4 },   // wink
+    { m: [60, 96, 100, 142, 140, 96], ry: 5, b: [44, 30, 80, 30], bo: 0, c: .65, tilt: 0 },              // joyful, eyes squeezed
   ];
   const mirror = (b) => [200 - b[0], b[1], 200 - b[2], b[3]];
-  const norm = (f) => ({ ...f, br: f.br || mirror(f.b), tilt: f.tilt || 0 });
+  const norm = (f) => ({ ...f, ryR: f.ryR ?? f.ry, br: f.br || mirror(f.b), tilt: f.tilt || 0 });
   let face = norm(IDLE[0]);
   let idleTimer = 0, idleStep = 0;
   function startIdle() {
@@ -48,7 +50,7 @@
     idleStep = 0;
     morphFace(IDLE[0], true);
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    idleTimer = setInterval(() => { idleStep ^= 1; morphFace(IDLE[idleStep], true, 560); }, 2300);
+    idleTimer = setInterval(() => { idleStep = (idleStep + 1) % IDLE.length; morphFace(IDLE[idleStep], true, 560); }, 2100);
   }
   function stopIdle() { clearInterval(idleTimer); idleTimer = 0; }
   let anim = 0;
@@ -216,7 +218,7 @@
   function drawFace(f) {
     const [x1, y1, cx, cy, x2, y2] = f.m;
     $('mouth').setAttribute('d', `M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`);
-    $('eyeL').setAttribute('ry', f.ry); $('eyeR').setAttribute('ry', f.ry);
+    $('eyeL').setAttribute('ry', f.ry); $('eyeR').setAttribute('ry', f.ryR);
     const [a, b, c, d] = f.b;
     const [e, g, h, k] = f.br;
     $('browL').setAttribute('d', `M${a} ${b} L${c} ${d}`);
@@ -236,6 +238,7 @@
       face = {
         m: from.m.map((v, i) => lerp(v, target.m[i], t)),
         ry: lerp(from.ry, target.ry, t),
+        ryR: lerp(from.ryR, target.ryR, t),
         b: from.b.map((v, i) => lerp(v, target.b[i], t)),
         br: from.br.map((v, i) => lerp(v, target.br[i], t)),
         tilt: lerp(from.tilt, target.tilt, t),
