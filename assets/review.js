@@ -54,6 +54,9 @@
     $('choiceMgmtTitle').textContent = t('r.choice.mgmt', { name: bizName() });
   }
 
+  const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="star" d="M12 2.8l2.75 5.6 6.15.9-4.45 4.35 1.05 6.15L12 16.9l-5.5 2.9 1.05-6.15L3.1 9.3l6.15-.9z"/></svg>'
+    + '<span class="burst" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
+
   function renderDots() {
     const wrap = $('rating');
     wrap.innerHTML = '';
@@ -63,7 +66,8 @@
       btn.className = 'dot';
       btn.setAttribute('role', 'radio');
       btn.setAttribute('aria-label', t('r.dotAria', { n: I18N.fmtNum(i), mood: mood(i) }));
-      btn.innerHTML = `<span>${I18N.fmtNum(i)}</span>`;
+      btn.style.setProperty('--i', i - 1);
+      btn.innerHTML = STAR;
       btn.addEventListener('click', () => setRating(i));
       wrap.appendChild(btn);
     }
@@ -82,9 +86,13 @@
 
   function setRating(r, animate = true) {
     rating = r;
+    $('rating').classList.toggle('rated', r > 0);
     document.querySelectorAll('.dot').forEach((d, i) => {
       const on = i < r;
       d.classList.toggle('on', on);
+      // Replay the micro-animations: filled stars pop in sequence, the chosen star sparkles.
+      d.classList.remove('pop', 'burst-on');
+      if (animate && on) { void d.offsetWidth; d.classList.add('pop'); if (i === r - 1) d.classList.add('burst-on'); }
       d.setAttribute('aria-checked', String(i === r - 1));
       d.tabIndex = (i === Math.max(0, r - 1)) ? 0 : -1;
     });

@@ -68,21 +68,53 @@ button, input, textarea { font: inherit; color: inherit; }
 .mood { margin: 14px 0 0; font-size: 18px; font-weight: 700; min-height: 1.4em; transition: transform .25s; }
 .mood.pop { transform: scale(1.08); }
 
-.rating { display: flex; justify-content: center; gap: 6px; margin: 4px 0 18px; }
+.rating { display: flex; justify-content: center; gap: 4px; margin: 4px 0 18px; }
+/* Mini stars (buttons keep the .dot class for the existing logic) */
 .dot {
-  width: 52px; height: 52px; border: 0; padding: 0; background: none; cursor: pointer;
+  --i: 0;
+  position: relative; width: 50px; height: 50px; border: 0; padding: 0; background: none; cursor: pointer;
   display: grid; place-items: center; border-radius: 50%;
   -webkit-tap-highlight-color: transparent;
 }
-.dot span {
-  width: 12px; height: 12px; border-radius: 50%;
-  background: color-mix(in srgb, var(--ink) 55%, transparent);
-  transition: all .28s cubic-bezier(.3,1.6,.5,1);
-  display: grid; place-items: center; font-size: 0; font-weight: 800; color: var(--to);
+.dot svg { width: 30px; height: 30px; overflow: visible; transition: transform .3s cubic-bezier(.3,1.6,.5,1), filter .3s; }
+.dot .star {
+  fill: transparent; stroke: color-mix(in srgb, var(--ink) 70%, transparent); stroke-width: 1.7; stroke-linejoin: round;
+  transition: fill .22s ease, stroke .22s ease;
 }
-.dot.on span { width: 36px; height: 36px; background: var(--ink); font-size: 15px; box-shadow: 0 6px 18px rgba(0,0,0,.15); }
+.dot.on .star { fill: var(--ink); stroke: var(--ink); }
+.dot.on svg { transform: scale(1.12); filter: drop-shadow(0 4px 10px rgba(0,0,0,.18)); }
+.dot:hover:not(.on) svg { transform: scale(1.12) rotate(-8deg); }
+.dot:active svg { transform: scale(.88); }
 .dot:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.dot:hover:not(.on) span { width: 18px; height: 18px; }
+
+/* Waiting for a rating: a soft twinkle travels across the stars */
+.rating:not(.rated) .dot svg { animation: twinkle 2.8s ease-in-out infinite; animation-delay: calc(var(--i) * 140ms); }
+@keyframes twinkle { 0%, 60%, 100% { transform: scale(1); } 70% { transform: scale(1.18) rotate(-6deg); } 80% { transform: scale(1); } }
+
+/* On select: filled stars pop one after another */
+.dot.pop svg { animation: starPop .52s cubic-bezier(.3,1.6,.5,1) both; animation-delay: calc(var(--i) * 45ms); }
+@keyframes starPop {
+  0% { transform: scale(.55) rotate(-25deg); }
+  55% { transform: scale(1.32) rotate(8deg); }
+  100% { transform: scale(1.12) rotate(0); }
+}
+/* ...and the chosen star gives a tiny burst */
+.dot .burst { position: absolute; inset: 0; pointer-events: none; }
+.dot .burst i {
+  position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%;
+  background: var(--ink); opacity: 0;
+}
+.dot.burst-on .burst i { animation: spark .6s ease-out both; animation-delay: calc(var(--i) * 45ms + 120ms); }
+.dot .burst i:nth-child(1) { --dx: 0px;   --dy: -24px; }
+.dot .burst i:nth-child(2) { --dx: 21px;  --dy: -10px; }
+.dot .burst i:nth-child(3) { --dx: 15px;  --dy: 19px; }
+.dot .burst i:nth-child(4) { --dx: -15px; --dy: 19px; }
+.dot .burst i:nth-child(5) { --dx: -21px; --dy: -10px; }
+@keyframes spark {
+  0% { opacity: 0; transform: translate(0, 0) scale(.4); }
+  25% { opacity: .95; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1); }
+}
 
 .details { display: grid; gap: 14px; animation: in .4s ease; margin-bottom: 16px; }
 .field { display: grid; gap: 6px; }

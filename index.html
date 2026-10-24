@@ -93,8 +93,12 @@
     .s-mood { text-align: center; font-weight: 700; font-size: 15px; margin: -4px 0 12px; min-height: 22px; }
     .s-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; }
     .s-dots i { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-style: normal; }
-    .s-dots i::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.6); transition: all .3s cubic-bezier(.3,1.6,.5,1); }
-    .s-dots i.on::before { width: 26px; height: 26px; background: #fff; }
+    .s-dots i::before { content: ''; width: 15px; height: 15px; background: rgba(255,255,255,.55); transition: all .3s cubic-bezier(.3,1.6,.5,1);
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+    .s-dots i.on::before { width: 25px; height: 25px; background: #fff; transform: rotate(0); animation: sPop .5s cubic-bezier(.3,1.6,.5,1) both; }
+    .s-dots i:nth-child(2).on::before { animation-delay: 45ms; } .s-dots i:nth-child(3).on::before { animation-delay: 90ms; }
+    .s-dots i:nth-child(4).on::before { animation-delay: 135ms; } .s-dots i:nth-child(5).on::before { animation-delay: 180ms; }
+    @keyframes sPop { 0% { transform: scale(.55) rotate(-25deg); } 55% { transform: scale(1.25) rotate(8deg); } 100% { transform: scale(1) rotate(0); } }
     .s-btn { min-height: 44px; border-radius: 99px; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; font-size: 14px; transition: background .3s, color .3s; }
     .s-btn.google { background: #fff; color: var(--to, #F2581E); }
     .s-btn svg { width: 18px; height: 18px; background: #fff; border-radius: 50%; padding: 2px; }
@@ -689,7 +693,7 @@
       function show(r) {
         morph(FACES[r]);
         $('dMood').textContent = mood(r);
-        [...$('dDots').children].forEach((d, i) => d.classList.toggle('on', i < r));
+        [...$('dDots').children].forEach((d, i) => { d.classList.remove('on'); void d.offsetWidth; d.classList.toggle('on', i < r); });
         const pub = r >= THRESHOLD;
         $('dBtn').className = 's-btn' + (pub ? ' google' : '');
         $('dBtn').innerHTML = pub ? gSvg + I18N.t('lp.demo.post') : I18N.t('lp.demo.send');
