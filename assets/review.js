@@ -69,20 +69,6 @@
     renderText();
   }
 
-  // Keep the headline on one line: step the font down to 16px, then allow wrapping as a last resort.
-  function fitHeadline() {
-    const h = $('headline');
-    h.classList.remove('wrap');
-    h.style.fontSize = '';
-    if (!h.clientWidth) return;
-    let size = parseFloat(getComputedStyle(h).fontSize);
-    while (h.scrollWidth > h.clientWidth && size > 16) { size -= 1; h.style.fontSize = size + 'px'; }
-    if (h.scrollWidth > h.clientWidth) h.classList.add('wrap');
-  }
-  // Re-fit whenever the screen appears or changes size (it is measured as 0 while hidden).
-  new ResizeObserver(() => { if (biz) fitHeadline(); }).observe($('rate'));
-  document.fonts?.ready.then(() => { if (biz) fitHeadline(); });
-
   // Business name and subtitle in the guest's language (Arabic versions are optional per business).
   const bizName = () => RC.localName(biz, I18N.lang) || t('r.thisPlace');
   function renderText() {
@@ -92,7 +78,6 @@
     $('bizName').textContent = name;
     // Owner's own headline if set, otherwise the personalised default.
     $('headline').textContent = RC.localTagline(biz, I18N.lang) || t('r.headline');
-    fitHeadline();
     renderDots();
     renderChips();
     renderSocials();
