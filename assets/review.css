@@ -89,27 +89,18 @@ button, input, textarea { font: inherit; color: inherit; }
 .dot:active svg { transform: scale(.88); }
 .dot:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-/* Waiting for a rating: a twinkle wave runs across the stars, building to stars 4 and 5 */
-.rating:not(.rated) .dot svg { animation: twinkle 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * 140ms); }
-@keyframes twinkle {
-  0%, 55%, 100% { transform: scale(1); }
-  65% { transform: scale(1.26) rotate(-9deg); }
-  74% { transform: scale(.97) rotate(3deg); }
-  82% { transform: scale(1); }
-}
-/* Stars 4 and 5 (always on the right): brighter, slightly bigger, bigger bounce with a glow */
-.rating:not(.rated) .dot:nth-child(n+4) .star { stroke: var(--ink); stroke-width: 2; fill: color-mix(in srgb, var(--ink) 18%, transparent); }
-.rating:not(.rated) .dot:nth-child(n+4) svg { animation-name: twinkleHero; }
-.rating:not(.rated) .dot:nth-child(5) svg { --rest: 1.12; }
+/* Waiting for a rating: every star gets the same bright outline, big pop with glow and sparkle,
+   in a wave from star 1 to star 5 */
+.rating:not(.rated) .dot .star { stroke: var(--ink); stroke-width: 2; fill: color-mix(in srgb, var(--ink) 18%, transparent); }
+.rating:not(.rated) .dot svg { animation: twinkleHero 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * 140ms); }
 @keyframes twinkleHero {
-  0%, 45%, 100% { transform: scale(var(--rest, 1.06)); filter: drop-shadow(0 0 0 transparent); }
+  0%, 45%, 100% { transform: scale(1.06); filter: drop-shadow(0 0 0 transparent); }
   56% { transform: scale(1.5) rotate(-14deg); filter: drop-shadow(0 0 12px color-mix(in srgb, var(--ink) 80%, transparent)); }
   66% { transform: scale(.95) rotate(7deg); }
   76% { transform: scale(1.22) rotate(-3deg); filter: drop-shadow(0 0 7px color-mix(in srgb, var(--ink) 55%, transparent)); }
-  88% { transform: scale(var(--rest, 1.06)); filter: drop-shadow(0 0 0 transparent); }
+  88% { transform: scale(1.06); filter: drop-shadow(0 0 0 transparent); }
 }
-/* ...and star 5 throws a little sparkle each cycle */
-.rating:not(.rated) .dot:nth-child(5) .burst i { animation: sparkIdle 2.6s ease-out infinite; animation-delay: calc(4 * 140ms + 260ms); }
+.rating:not(.rated) .dot .burst i { animation: sparkIdle 2.6s ease-out infinite; animation-delay: calc(var(--i) * 140ms + 260ms); }
 @keyframes sparkIdle {
   0% { opacity: 0; transform: translate(0, 0) scale(.4); }
   6% { opacity: .95; }
