@@ -150,6 +150,8 @@ I18N.add({
     'social.instagram': 'Instagram', 'social.tiktok': 'TikTok', 'social.snapchat': 'Snapchat',
     'social.facebook': 'Facebook', 'social.x': 'X', 'social.website': 'Website',
     'a.handle.ph': '@handle',
+    'a.issues.top': 'Most common issues',
+    'a.issue.food': 'Food quality', 'a.issue.service': 'Slow service', 'a.issue.staff': 'Staff attitude', 'a.issue.clean': 'Cleanliness',
   },
   ar: {
     'a.docTitle': 'لوحة تحكم Review Finder',
@@ -301,5 +303,7 @@ I18N.add({
     'social.instagram': 'إنستغرام', 'social.tiktok': 'تيك توك', 'social.snapchat': 'سناب شات',
     'social.facebook': 'فيسبوك', 'social.x': 'X', 'social.website': 'الموقع الإلكتروني',
     'a.handle.ph': '@handle',
+    'a.issues.top': 'أكثر المشكلات تكراراً',
+    'a.issue.food': 'جودة الطعام', 'a.issue.service': 'بطء الخدمة', 'a.issue.staff': 'تعامل الموظفين', 'a.issue.clean': 'النظافة',
   },
 });

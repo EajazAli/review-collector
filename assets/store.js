@@ -135,7 +135,7 @@ const RC = (() => {
 
   async function createBusiness(b) {
     let { data, error } = await sb.from('businesses').insert(toRow(b)).select().single();
-    if (error?.code === '42703') {
+    if (error?.code === 'PGRST204' || error?.code === '42703') {
       const { name_ar, tagline_ar, ...rest } = toRow(b);
       ({ data, error } = await sb.from('businesses').insert(rest).select().single());
     }
@@ -147,7 +147,7 @@ const RC = (() => {
     if (b.logo && b.logo.startsWith('data:')) b = { ...b, logo: await uploadLogo(b.id, b.logo) };
     let { data, error } = await sb.from('businesses').update(toRow(b)).eq('id', b.id).select().single();
     // Database not yet updated with supabase/002_arabic.sql: save everything except the Arabic fields.
-    if (error?.code === '42703') {
+    if (error?.code === 'PGRST204' || error?.code === '42703') {
       const { name_ar, tagline_ar, ...rest } = toRow(b);
       ({ data, error } = await sb.from('businesses').update(rest).eq('id', b.id).select().single());
     }
@@ -194,6 +194,7 @@ const RC = (() => {
     const review = {
       id: uuid(), business_id: b.id, rating: item.rating, route: item.route, text: item.text || '',
       guest_name: item.guestName || '', guest_phone: item.guestPhone || '', images: [], status: 'new',
+      issues: (item.issues || []).filter((k) => ['food', 'service', 'staff', 'clean'].includes(k)),
     };
     const inDb = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(b.id || '');
     if (!sb || !inDb) return { ok: false, reason: 'not-in-database', review };
@@ -205,7 +206,13 @@ const RC = (() => {
         if (!error) review.images.push(path);
       } catch { /* keep going without this photo */ }
     }
-    const { error } = await sb.from('reviews').insert(review);
+    let { error } = await sb.from('reviews').insert(review);
+    // Database not yet updated with supabase/003_issues.sql: keep the issues inside the text instead.
+    if (error?.code === 'PGRST204' || error?.code === '42703') {
+      const { issues, ...rest } = review;
+      if (issues.length) rest.text = `[${issues.join(', ')}] ${rest.text}`.trim();
+      ({ error } = await sb.from('reviews').insert(rest));
+    }
     return { ok: !error, error: error?.message, review };
   }
 

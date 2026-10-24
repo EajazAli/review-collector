@@ -148,7 +148,11 @@ textarea:focus, input:focus { border-color: var(--ink); background: color-mix(in
 }
 .hint { margin: 0; font-size: 12.5px; opacity: .85; line-height: 1.45; }
 
-.cta-wrap { position: sticky; bottom: calc(12px + var(--safe-b)); }
+.cta-wrap {
+  position: sticky; bottom: 0; z-index: 2;
+  margin: 0 -24px; padding: 18px 24px calc(12px + var(--safe-b));
+  background: linear-gradient(to top, var(--to) 72%, color-mix(in srgb, var(--to) 0%, transparent));
+}
 .cta {
   width: 100%; min-height: 54px; border-radius: var(--radius); cursor: pointer;
   border: 2px solid var(--ink); background: transparent;
@@ -263,3 +267,31 @@ html[lang="ar"] .skip { text-transform: none; font-size: 13px; }
 /* Logical properties so the layout mirrors in Arabic */
 .thumb button { right: auto; inset-inline-end: 2px; }
 .steps { padding-left: 0; padding-inline-start: 22px; }
+
+/* ---------- Quick-pick issues (low ratings) ---------- */
+.issues { display: grid; gap: 8px; animation: in .35s ease; }
+.chips {
+  display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain;
+  margin: 0 -24px; padding: 2px 24px 6px; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+}
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; font-size: 14.5px; font-weight: 700;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 40%, transparent);
+  background: color-mix(in srgb, var(--ink) 12%, transparent); color: var(--ink);
+  transition: background .2s, border-color .2s, color .2s, transform .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.chip:active { transform: scale(.95); }
+.chip-ic { font-size: 17px; line-height: 1; }
+.chip-check { width: 0; height: 16px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; transition: width .2s; }
+.chip.on { background: var(--ink); border-color: var(--ink); color: var(--to); }
+.chip.on .chip-check { width: 16px; }
+.chip.on .chip-check path { stroke-dasharray: 22; stroke-dashoffset: 22; animation: tick .35s .05s ease-out forwards; }
+.chip.pop { animation: chipPop .4s cubic-bezier(.3,1.6,.5,1); }
+@keyframes chipPop { 0% { transform: scale(.92); } 55% { transform: scale(1.07); } 100% { transform: scale(1); } }
+@keyframes tick { to { stroke-dashoffset: 0; } }
+.chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }

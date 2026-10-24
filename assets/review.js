@@ -18,6 +18,18 @@
   ];
 
   let biz = null;
+  // Quick-pick issues for low ratings (keys are stored; labels come from the language file).
+  const ISSUES = [
+    { key: 'food', icon: '🍽️' },
+    { key: 'service', icon: '⏱️' },
+    { key: 'staff', icon: '🙋' },
+    { key: 'clean', icon: '🧹' },
+  ];
+  const picked = new Set();
+  const I18N_LABEL = {
+    en: { food: 'Food quality', service: 'Slow service', staff: 'Staff attitude', clean: 'Cleanliness' },
+    ar: { food: 'جودة الطعام', service: 'بطء الخدمة', staff: 'تعامل الموظفين', clean: 'النظافة' },
+  };
   let rating = 0;
   let photos = [];
   let face = structuredClone(FACES[0]);
@@ -46,6 +58,7 @@
     $('bizName').textContent = name;
     $('tagline').textContent = RC.localTagline(biz, I18N.lang) || t('r.taglineDefault');
     renderDots();
+    renderChips();
     renderSocials();
     renderThumbs();
     setRating(rating, false);
@@ -72,6 +85,30 @@
       wrap.appendChild(btn);
     }
   }
+  function renderChips() {
+    $('chips').innerHTML = ISSUES.map((it) =>
+      `<button type="button" class="chip${picked.has(it.key) ? ' on' : ''}" data-key="${it.key}" aria-pressed="${picked.has(it.key)}">`
+      + `<span class="chip-ic" aria-hidden="true">${it.icon}</span><span>${t(`r.issue.${it.key}`)}</span>`
+      + '<svg class="chip-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>').join('');
+  }
+  $('chips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const k = chip.dataset.key;
+    picked.has(k) ? picked.delete(k) : picked.add(k);
+    chip.classList.toggle('on', picked.has(k));
+    chip.setAttribute('aria-pressed', String(picked.has(k)));
+    chip.classList.remove('pop'); void chip.offsetWidth; chip.classList.add('pop');
+    updateTextPrompt();
+  });
+  // With an issue picked, typing becomes optional.
+  function updateTextPrompt() {
+    if (!rating || isPublic()) return;
+    const optional = picked.size > 0;
+    $('textLabel').textContent = t(optional ? 'r.text.labelBadOptional' : 'r.text.labelBad');
+    $('text').placeholder = t(optional ? 'r.text.phBadOptional' : 'r.text.phBad');
+  }
+
   // Arrow keys follow the reading direction (right = higher in English, left = higher in Arabic).
   $('rating').addEventListener('keydown', (e) => {
     const rtl = I18N.lang === 'ar';
@@ -113,12 +150,15 @@
       $('textLabel').textContent = t('r.text.labelGood');
       $('text').placeholder = t('r.text.phGood');
       $('privateFields').hidden = true;
+      $('issuesBox').hidden = true;
     } else {
       cta.className = 'cta';
       cta.textContent = t('r.send');
       $('textLabel').textContent = t('r.text.labelBad');
       $('text').placeholder = t('r.text.phBad');
       $('privateFields').hidden = false;
+      $('issuesBox').hidden = false;
+      updateTextPrompt();
     }
   }
 
@@ -182,8 +222,8 @@
 
     if (isPublic()) { await openGoogle(item); return; }
 
-    if (!text && !photos.length) { toast(t('r.toast.tellUs')); $('text').focus(); return; }
-    Object.assign(item, { guestName: $('guestName').value.trim(), guestPhone: $('guestPhone').value.trim() });
+    if (!text && !photos.length && !picked.size) { toast(t('r.toast.tellUs')); $('chips').querySelector('.chip')?.focus(); return; }
+    Object.assign(item, { guestName: $('guestName').value.trim(), guestPhone: $('guestPhone').value.trim(), issues: [...picked] });
     if (isPreview) { toast(t('r.toast.preview')); return; }
 
     const cta = $('cta');
@@ -200,7 +240,8 @@
         `LOW RATING ${rating}/5 | تقييم منخفض ${rating}/5`,
         biz.name,
         '',
-        text || '(no comment / بدون تعليق)',
+        picked.size ? 'Issues / المشكلات: ' + [...picked].map((k) => `${I18N_LABEL.en[k]} / ${I18N_LABEL.ar[k]}`).join(', ') : '',
+        text || (picked.size ? '' : '(no comment / بدون تعليق)'),
         who ? `\nFrom / من: ${who}` : '',
         photos.length ? `\n${photos.length} photo(s) / صور: see your Review Finder dashboard / راجع لوحة Review Finder` : '',
         I18N.lang === 'ar' ? '\n(Guest used Arabic / الضيف استخدم العربية)' : '',
@@ -273,7 +314,7 @@
   }
 
   function reset() {
-    photos = []; renderThumbs(); $('waRetry').hidden = true;
+    photos = []; renderThumbs(); picked.clear(); renderChips(); $('waRetry').hidden = true;
     $('text').value = ''; $('guestName').value = ''; $('guestPhone').value = '';
     setRating(0, false);
     doneKind = null;

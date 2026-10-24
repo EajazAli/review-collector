@@ -4,6 +4,13 @@
   const SOCIAL_KEYS = Object.keys(RC.SOCIAL);
   const tr = (k, v) => I18N.t(k, v);
   const num = (n) => I18N.fmtNum(n);
+  // Quick-pick issues guests can tap on low ratings
+  const ISSUE_KEYS = ['food', 'service', 'staff', 'clean'];
+  const ISSUE_ICON = { food: '🍽️', service: '⏱️', staff: '🙋', clean: '🧹' };
+  // Reviews saved before the issues column existed carry them as a "[food, service] ..." prefix.
+  const LEGACY = /^\[((?:food|service|staff|clean)(?:,\s*(?:food|service|staff|clean))*)\]\s*/;
+  const issuesOf = (r) => (r.issues?.length ? r.issues : ((r.text || '').match(LEGACY)?.[1].split(/,\s*/) || []));
+  const textOf = (r) => (r.text || '').replace(LEGACY, '');
 
   let user = null;        // { email, isAdmin }
   let list = [];          // businesses this login can manage
@@ -319,6 +326,15 @@
 
     const scoped = reviews.filter((r) => fb.value === 'all' || r.business_id === fb.value);
     const priv = scoped.filter((r) => r.route === 'private');
+    // Most common issues among private feedback
+    const counts = Object.fromEntries(ISSUE_KEYS.map((k) => [k, 0]));
+    priv.forEach((r) => issuesOf(r).forEach((k) => counts[k]++));
+    const ranked = ISSUE_KEYS.filter((k) => counts[k]).sort((a, b) => counts[b] - counts[a]);
+    $('issueStats').hidden = !ranked.length;
+    $('issueStats').innerHTML = ranked.length ? `<span class="is-title">${tr('a.issues.top')}</span>` + ranked.map((k) => {
+      const pct = Math.round((counts[k] / Math.max(1, priv.length)) * 100);
+      return `<div class="is-row"><span class="is-label">${ISSUE_ICON[k]} ${tr(`a.issue.${k}`)}</span><span class="is-bar"><i style="width:${pct}%"></i></span><b>${num(counts[k])}</b></div>`;
+    }).join('') : '';
     const avg = scoped.length ? (scoped.reduce((s, r) => s + r.rating, 0) / scoped.length).toFixed(1) : '–';
     $('stats').innerHTML = [
       [num(scoped.length), tr('a.stat.total')],
@@ -340,7 +356,8 @@
           ${r.status === 'resolved' ? `<span class="tag">${tr('a.tag.resolved')}</span>` : ''}
           <time>${I18N.fmtDate(r.created_at)}</time>
         </div>
-        ${r.text ? `<p dir="auto">${RC.esc(r.text)}</p>` : `<p class="muted">${tr('a.noComment')}</p>`}
+        ${issuesOf(r).length ? `<div class="fb-issues">${issuesOf(r).map((k) => `<span class="tag issue">${ISSUE_ICON[k]} ${tr(`a.issue.${k}`)}</span>`).join('')}</div>` : ''}
+        ${textOf(r) ? `<p dir="auto">${RC.esc(textOf(r))}</p>` : (issuesOf(r).length ? '' : `<p class="muted">${tr('a.noComment')}</p>`)}
         ${r.images?.length ? `<div class="fb-imgs">${r.images.map((p) => photoLinks[p] ? `<img src="${RC.esc(photoLinks[p])}" alt="Guest photo">` : '').join('')}</div>` : ''}
         ${r.route === 'google' ? `<div class="fb-foot">
           <span class="who-line">${tr('a.sentToGoogle')}${RC.googleReviewsUrl(biz(r.business_id)) ? ` · <a class="link small" target="_blank" rel="noopener" href="${RC.esc(RC.googleReviewsUrl(biz(r.business_id)))}">${tr('a.seeOnGoogle')}</a>` : ''}</span>

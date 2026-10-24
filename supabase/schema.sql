@@ -149,3 +149,8 @@ create policy photos_read on storage.objects for select to authenticated
 -- Arabic business name / subtitle (also in 002_arabic.sql)
 alter table public.businesses add column if not exists name_ar    text not null default '';
 alter table public.businesses add column if not exists tagline_ar text not null default '';
+
+-- Quick-pick issues on low ratings (also in 003_issues.sql)
+alter table public.reviews add column if not exists issues text[] not null default '{}';
+alter table public.reviews drop constraint if exists reviews_issues_check;
+alter table public.reviews add constraint reviews_issues_check check (issues <@ array['food','service','staff','clean']::text[]);

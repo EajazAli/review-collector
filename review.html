@@ -53,6 +53,10 @@
     <div class="rating" id="rating" role="radiogroup" data-i18n-aria="r.ratingGroup"></div>
 
     <form class="details" id="details" hidden>
+      <div class="issues" id="issuesBox" hidden>
+        <span class="label" id="issuesLabel" data-i18n="r.issues.label">What went wrong? Tap all that apply</span>
+        <div class="chips" id="chips" role="group" aria-labelledby="issuesLabel"></div>
+      </div>
       <label class="field">
         <span class="label" id="textLabel">Tell us more</span>
         <textarea id="text" rows="4" maxlength="1500"></textarea>
