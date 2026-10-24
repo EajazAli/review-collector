@@ -68,7 +68,8 @@ button, input, textarea { font: inherit; color: inherit; }
 .mood { margin: 14px 0 0; font-size: 18px; font-weight: 700; min-height: 1.4em; transition: transform .25s; }
 .mood.pop { transform: scale(1.08); }
 
-.rating { display: flex; justify-content: center; gap: 4px; margin: 4px 0 18px; }
+/* Stars always fill left to right, in English and Arabic */
+.rating { display: flex; justify-content: center; gap: 4px; margin: 4px 0 18px; direction: ltr; }
 /* Mini stars (buttons keep the .dot class for the existing logic) */
 .dot {
   --i: 0;
@@ -270,16 +271,11 @@ html[lang="ar"] .skip { text-transform: none; font-size: 13px; }
 
 /* ---------- Quick-pick issues (low ratings) ---------- */
 .issues { display: grid; gap: 8px; animation: in .35s ease; }
-.chips {
-  display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain;
-  margin: 0 -24px; padding: 2px 24px 6px; scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
-          mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
-}
-.chips::-webkit-scrollbar { display: none; }
+/* All issues visible at once: chips wrap onto rows (no sideways scrolling) */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0; }
 .chip {
-  flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap; font-size: 14.5px; font-weight: 700;
+  flex: 0 1 auto; display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 13px; border-radius: 999px; cursor: pointer; white-space: nowrap; font-size: 14.5px; font-weight: 700;
   border: 1.5px solid color-mix(in srgb, var(--ink) 40%, transparent);
   background: color-mix(in srgb, var(--ink) 12%, transparent); color: var(--ink);
   transition: background .2s, border-color .2s, color .2s, transform .15s;

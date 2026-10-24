@@ -102,6 +102,18 @@
     chip.classList.remove('pop'); void chip.offsetWidth; chip.classList.add('pop');
     updateTextPrompt();
   });
+  // After a low rating, glide the page so every issue sits above the floating Send button.
+  function revealIssues() {
+    requestAnimationFrame(() => {
+      const box = $('issuesBox').getBoundingClientRect();
+      const limit = $('cta').getBoundingClientRect().top - 16;
+      if (box.bottom > limit) {
+        const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+        scrollBy({ top: box.bottom - limit, behavior: smooth ? 'smooth' : 'auto' });
+      }
+    });
+  }
+
   // With an issue picked, typing becomes optional.
   function updateTextPrompt() {
     if (!rating || isPublic()) return;
@@ -110,11 +122,10 @@
     $('text').placeholder = t(optional ? 'r.text.phBadOptional' : 'r.text.phBad');
   }
 
-  // Arrow keys follow the reading direction (right = higher in English, left = higher in Arabic).
+  // Stars run left to right in every language, so Right/Up = higher.
   $('rating').addEventListener('keydown', (e) => {
-    const rtl = I18N.lang === 'ar';
-    const up = e.key === 'ArrowUp' || e.key === (rtl ? 'ArrowLeft' : 'ArrowRight');
-    const down = e.key === 'ArrowDown' || e.key === (rtl ? 'ArrowRight' : 'ArrowLeft');
+    const up = e.key === 'ArrowUp' || e.key === 'ArrowRight';
+    const down = e.key === 'ArrowDown' || e.key === 'ArrowLeft';
     if (up) { setRating(Math.min(5, rating + 1)); e.preventDefault(); }
     if (down) { setRating(Math.max(1, rating - 1)); e.preventDefault(); }
     $('rating').querySelectorAll('.dot')[Math.max(0, rating - 1)]?.focus();
@@ -162,6 +173,7 @@
       $('issuesBox').hidden = !RC.usesIssues(biz);
       if (!RC.usesIssues(biz)) picked.clear();
       updateTextPrompt();
+      if (animate && RC.usesIssues(biz)) revealIssues();
     }
   }
 
