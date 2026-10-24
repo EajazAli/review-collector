@@ -153,4 +153,9 @@ alter table public.businesses add column if not exists tagline_ar text not null 
 -- Quick-pick issues on low ratings (also in 003_issues.sql)
 alter table public.reviews add column if not exists issues text[] not null default '{}';
 alter table public.reviews drop constraint if exists reviews_issues_check;
-alter table public.reviews add constraint reviews_issues_check check (issues <@ array['food','service','staff','clean']::text[]);
+alter table public.reviews add constraint reviews_issues_check check (issues <@ array['food','service','staff','clean','value']::text[]);
+
+-- Business type (also in 004_business_type.sql)
+alter table public.businesses add column if not exists business_type text not null default 'restaurant';
+alter table public.businesses drop constraint if exists businesses_type_check;
+alter table public.businesses add constraint businesses_type_check check (business_type in ('restaurant','hotel','salon','clinic','retail','other'));

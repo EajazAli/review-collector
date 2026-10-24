@@ -24,11 +24,12 @@
     { key: 'service', icon: '⏱️' },
     { key: 'staff', icon: '🙋' },
     { key: 'clean', icon: '🧹' },
+    { key: 'value', icon: '💸' },
   ];
   const picked = new Set();
   const I18N_LABEL = {
-    en: { food: 'Food quality', service: 'Slow service', staff: 'Staff attitude', clean: 'Cleanliness' },
-    ar: { food: 'جودة الطعام', service: 'بطء الخدمة', staff: 'تعامل الموظفين', clean: 'النظافة' },
+    en: { food: 'Food quality', service: 'Slow service', staff: 'Staff attitude', clean: 'Cleanliness', value: 'Poor value for money' },
+    ar: { food: 'جودة الطعام', service: 'بطء الخدمة', staff: 'تعامل الموظفين', clean: 'النظافة', value: 'لا يستحق السعر' },
   };
   let rating = 0;
   let photos = [];
@@ -157,7 +158,9 @@
       $('textLabel').textContent = t('r.text.labelBad');
       $('text').placeholder = t('r.text.phBad');
       $('privateFields').hidden = false;
-      $('issuesBox').hidden = false;
+      // Quick-pick issues are for restaurants / cafés only
+      $('issuesBox').hidden = !RC.usesIssues(biz);
+      if (!RC.usesIssues(biz)) picked.clear();
       updateTextPrompt();
     }
   }

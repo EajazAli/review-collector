@@ -57,6 +57,8 @@
               <div class="grow grid2">
                 <label class="f"><span data-i18n="a.bizName">Business name</span><input name="bizName" required data-i18n-ph="a.bizName.ph" /></label>
                 <label class="f"><span data-i18n="a.pageLink">Page link</span><div class="prefix"><em>?b=</em><input name="slug" required pattern="[a-z0-9\-]+" placeholder="al-ameen" /></div></label>
+                <label class="f"><span data-i18n="a.type">Type of business</span><select name="businessType"></select></label>
+                <p class="muted small type-hint" id="typeHint"></p>
                 <label class="f"><span data-i18n="a.bizNameAr">Business name in Arabic (optional)</span><input name="nameAr" dir="rtl" lang="ar" data-i18n-ph="a.bizNameAr.ph" /></label>
                 <label class="f"><span data-i18n="a.tagline">Subtitle on review page</span><input name="tagline" data-i18n-ph="a.tagline.ph" /></label>
                 <label class="f span2"><span data-i18n="a.taglineAr">Subtitle in Arabic (optional)</span><input name="taglineAr" dir="rtl" lang="ar" data-i18n-ph="a.taglineAr.ph" /></label>
@@ -200,6 +202,16 @@
       </div>
     </section>
   </main>
+
+  <!-- Asked when creating a business -->
+  <div class="modal" id="typeModal" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="typeTitle">
+      <h2 id="typeTitle" data-i18n="a.type.ask">What kind of business is it?</h2>
+      <p class="muted small" data-i18n="a.type.askSub">This sets up the review page for them. Restaurants and cafés get quick-pick issues for low ratings.</p>
+      <div class="type-grid" id="typeGrid"></div>
+      <button class="btn ghost" type="button" id="typeCancel" data-i18n="a.cancel">Cancel</button>
+    </div>
+  </div>
 
   <div class="toast" id="toast" hidden></div>
 

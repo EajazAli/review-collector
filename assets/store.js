@@ -28,6 +28,10 @@ const RC = (() => {
     midnight: { label: 'Midnight', from: '#3A3F58', to: '#11131C', ink: '#FFFFFF', face: '#FFC86B' },
     sand:     { label: 'Sand',     from: '#FFF1D6', to: '#F5C98B', ink: '#3B2A12', face: '#3B2A12' },
   };
+  // Business types; quick-pick issues are offered to restaurant / café guests only.
+  const BUSINESS_TYPES = ['restaurant', 'hotel', 'salon', 'clinic', 'retail', 'other'];
+  const ISSUE_KEYS = ['food', 'service', 'staff', 'clean', 'value'];
+  const usesIssues = (b) => (b?.businessType || 'restaurant') === 'restaurant';
   const EMPTY_SOCIAL = { instagram: '', tiktok: '', snapchat: '', facebook: '', x: '', website: '' };
 
   const uid = () => Math.random().toString(36).slice(2, 10);
@@ -44,6 +48,7 @@ const RC = (() => {
     tagline: '',
     nameAr: '',
     taglineAr: '',
+    businessType: 'restaurant',
     logo: '',
     theme: { preset: 'sunset', ...THEMES.sunset },
     threshold: 4,
@@ -55,14 +60,14 @@ const RC = (() => {
 
   // ---------- Row mapping ----------
   const fromRow = (r) => ({
-    id: r.id, slug: r.slug, name: r.name, tagline: r.tagline, nameAr: r.name_ar || '', taglineAr: r.tagline_ar || '', logo: r.logo,
+    id: r.id, slug: r.slug, name: r.name, tagline: r.tagline, nameAr: r.name_ar || '', taglineAr: r.tagline_ar || '', businessType: r.business_type || 'restaurant', logo: r.logo,
     theme: { ...THEMES.sunset, ...(r.theme || {}) }, threshold: r.threshold,
     googleReviewUrl: r.google_review_url, whatsapp: [...(r.whatsapp || []), '', ''].slice(0, 2),
     webhookUrl: r.webhook_url, social: { ...EMPTY_SOCIAL, ...(r.social || {}) },
     createdAt: r.created_at, updatedAt: r.updated_at,
   });
   const toRow = (b) => ({
-    slug: b.slug, name: b.name || '', tagline: b.tagline || '', name_ar: b.nameAr || '', tagline_ar: b.taglineAr || '', logo: b.logo || '',
+    slug: b.slug, name: b.name || '', tagline: b.tagline || '', name_ar: b.nameAr || '', tagline_ar: b.taglineAr || '', business_type: b.businessType || 'restaurant', logo: b.logo || '',
     theme: b.theme || {}, threshold: +b.threshold || 4,
     google_review_url: b.googleReviewUrl || '', whatsapp: (b.whatsapp || ['', '']).map((x) => (x || '').trim()),
     webhook_url: b.webhookUrl || '', social: b.social || {},
@@ -133,24 +138,29 @@ const RC = (() => {
     return sb.storage.from('logos').getPublicUrl(path).data.publicUrl;
   }
 
-  async function createBusiness(b) {
-    let { data, error } = await sb.from('businesses').insert(toRow(b)).select().single();
-    if (error?.code === 'PGRST204' || error?.code === '42703') {
-      const { name_ar, tagline_ar, ...rest } = toRow(b);
-      ({ data, error } = await sb.from('businesses').insert(rest).select().single());
+  // Retry without any column the database doesn't have yet (a supabase/00x_*.sql update not run).
+  async function withMissingColumns(row, run) {
+    let res = await run(row);
+    for (let tries = 0; tries < 4 && (res.error?.code === 'PGRST204' || res.error?.code === '42703'); tries++) {
+      const col = /'(\w+)' column|column \w+\.(\w+)/.exec(res.error.message || '');
+      const name = col && (col[1] || col[2]);
+      if (!name || !(name in row)) break;
+      const { [name]: _drop, ...rest } = row;
+      row = rest;
+      res = await run(row);
     }
+    return res;
+  }
+
+  async function createBusiness(b) {
+    const { data, error } = await withMissingColumns(toRow(b), (row) => sb.from('businesses').insert(row).select().single());
     fail(error);
     return fromRow(data);
   }
 
   async function saveBusiness(b) {
     if (b.logo && b.logo.startsWith('data:')) b = { ...b, logo: await uploadLogo(b.id, b.logo) };
-    let { data, error } = await sb.from('businesses').update(toRow(b)).eq('id', b.id).select().single();
-    // Database not yet updated with supabase/002_arabic.sql: save everything except the Arabic fields.
-    if (error?.code === 'PGRST204' || error?.code === '42703') {
-      const { name_ar, tagline_ar, ...rest } = toRow(b);
-      ({ data, error } = await sb.from('businesses').update(rest).eq('id', b.id).select().single());
-    }
+    const { data, error } = await withMissingColumns(toRow(b), (row) => sb.from('businesses').update(row).eq('id', b.id).select().single());
     fail(error);
     return fromRow(data);
   }
@@ -194,7 +204,7 @@ const RC = (() => {
     const review = {
       id: uuid(), business_id: b.id, rating: item.rating, route: item.route, text: item.text || '',
       guest_name: item.guestName || '', guest_phone: item.guestPhone || '', images: [], status: 'new',
-      issues: (item.issues || []).filter((k) => ['food', 'service', 'staff', 'clean'].includes(k)),
+      issues: (item.issues || []).filter((k) => ISSUE_KEYS.includes(k)),
     };
     const inDb = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(b.id || '');
     if (!sb || !inDb) return { ok: false, reason: 'not-in-database', review };
@@ -327,7 +337,7 @@ const RC = (() => {
   };
 
   return {
-    configured, sb, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
+    configured, sb, BUSINESS_TYPES, ISSUE_KEYS, usesIssues, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
     listMembers, setMembers, submitReview, listReviews, updateReview, photoUrls,

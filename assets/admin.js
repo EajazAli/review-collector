@@ -5,10 +5,11 @@
   const tr = (k, v) => I18N.t(k, v);
   const num = (n) => I18N.fmtNum(n);
   // Quick-pick issues guests can tap on low ratings
-  const ISSUE_KEYS = ['food', 'service', 'staff', 'clean'];
-  const ISSUE_ICON = { food: '🍽️', service: '⏱️', staff: '🙋', clean: '🧹' };
+  const ISSUE_KEYS = RC.ISSUE_KEYS;
+  const ISSUE_ICON = { food: '🍽️', service: '⏱️', staff: '🙋', clean: '🧹', value: '💸' };
+  const TYPE_ICON = { restaurant: '🍽️', hotel: '🏨', salon: '💇', clinic: '🩺', retail: '🛍️', other: '✨' };
   // Reviews saved before the issues column existed carry them as a "[food, service] ..." prefix.
-  const LEGACY = /^\[((?:food|service|staff|clean)(?:,\s*(?:food|service|staff|clean))*)\]\s*/;
+  const LEGACY = /^\[((?:food|service|staff|clean|value)(?:,\s*(?:food|service|staff|clean|value))*)\]\s*/;
   const issuesOf = (r) => (r.issues?.length ? r.issues : ((r.text || '').match(LEGACY)?.[1].split(/,\s*/) || []));
   const textOf = (r) => (r.text || '').replace(LEGACY, '');
 
@@ -66,10 +67,24 @@
     }
   }
 
-  async function addBusiness() {
+  function addBusiness() {
     if (dirty && !confirm(tr('t.discard'))) return;
+    $('typeModal').hidden = false;
+    $('typeGrid').querySelector('button')?.focus();
+  }
+  $('typeGrid').addEventListener('click', (e) => {
+    const type = e.target.closest('[data-type]')?.dataset.type;
+    if (!type) return;
+    $('typeModal').hidden = true;
+    createBusinessOfType(type);
+  });
+  $('typeCancel').addEventListener('click', () => { $('typeModal').hidden = true; });
+  $('typeModal').addEventListener('click', (e) => { if (e.target === $('typeModal')) $('typeModal').hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') $('typeModal').hidden = true; });
+
+  async function createBusinessOfType(type) {
     dirty = false;
-    const b = { ...RC.newBusiness(), name: tr('a.newBizName'), slug: uniqueSlug('new-business') };
+    const b = { ...RC.newBusiness(), businessType: type, name: tr('a.newBizName'), slug: uniqueSlug('new-business') };
     try {
       const created = await RC.createBusiness(b);
       list.push(created);
@@ -92,6 +107,10 @@
       `<button type="button" role="radio" data-n="${n}">${num(n)}★<small>${tr(`a.th.${n}`)}</small></button>`).join('');
     $('swatches').innerHTML = Object.entries(RC.THEMES).map(([k, t]) =>
       `<button type="button" class="sw" data-k="${k}" data-label="${tr(`theme.${k}`)}" title="${tr(`theme.${k}`)}" style="background:linear-gradient(150deg,${t.from},${t.to})"></button>`).join('');
+    form.businessType.innerHTML = RC.BUSINESS_TYPES.map((k) => `<option value="${k}">${TYPE_ICON[k]} ${tr(`a.type.${k}`)}</option>`).join('');
+    if (draft) form.businessType.value = draft.businessType || 'restaurant';
+    $('typeGrid').innerHTML = RC.BUSINESS_TYPES.map((k) =>
+      `<button type="button" class="type-opt" data-type="${k}"><span class="type-ic" aria-hidden="true">${TYPE_ICON[k]}</span><span>${tr(`a.type.${k}`)}</span></button>`).join('');
     $('socialFields').innerHTML = SOCIAL_KEYS.map((k) =>
       `<label class="f"><span>${tr(`social.${k}`)}</span><input name="social_${k}" dir="ltr" placeholder="${k === 'website' ? 'www.example.com' : tr('a.handle.ph')}" /></label>`).join('');
   }
@@ -100,6 +119,9 @@
     const d = draft;
     form.bizName.value = d.name; form.slug.value = d.slug; form.tagline.value = d.tagline || '';
     form.nameAr.value = d.nameAr || ''; form.taglineAr.value = d.taglineAr || '';
+    form.businessType.value = d.businessType || 'restaurant';
+    form.businessType.disabled = !user.isAdmin;
+    renderTypeHint();
     form.slug.readOnly = !user.isAdmin;
     form.from.value = d.theme.from; form.to.value = d.theme.to; form.ink.value = d.theme.ink || '#ffffff'; form.face.value = d.theme.face || '#1e1a17';
     form.googleReviewUrl.value = d.googleReviewUrl || '';
@@ -124,6 +146,8 @@
       draft.theme = { ...draft.theme, [n]: v, preset: 'custom' }; renderSwatches();
     } else if (n === 'wa0' || n === 'wa1') {
       draft.whatsapp[+n.slice(2)] = v.trim();
+    } else if (n === 'businessType') {
+      draft.businessType = v; renderTypeHint();
     } else if (n.startsWith('social_')) {
       draft.social[n.slice(7)] = v.trim();
     } else {
@@ -181,6 +205,10 @@
     if (!url) return toast(tr('t.addGoogle'));
     window.open(url, '_blank', 'noopener');
   });
+
+  function renderTypeHint() {
+    $('typeHint').textContent = tr(RC.usesIssues(draft) ? 'a.type.hintOn' : 'a.type.hintOff');
+  }
 
   function markDirty() {
     dirty = true;
@@ -453,7 +481,8 @@
     buildStaticControls();
     if (draft) {
       SOCIAL_KEYS.forEach((k) => (form[`social_${k}`].value = draft.social[k] || ''));
-      renderThreshold(); renderSwatches(); renderDelivery();
+      form.businessType.value = draft.businessType || 'restaurant';
+      renderThreshold(); renderSwatches(); renderDelivery(); renderTypeHint();
       if (dirty) $('saveStatus').textContent = tr('a.st.unsaved');
     }
     renderList();
