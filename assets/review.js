@@ -33,7 +33,24 @@
   };
   let rating = 0;
   let photos = [];
-  let face = structuredClone(FACES[0]);
+  // Before a star is chosen the face switches between happy and curious.
+  // br = right brow (otherwise mirrored from the left), tilt = head tilt in degrees.
+  const IDLE = [
+    { m: [66, 100, 100, 132, 134, 100], ry: 11, b: [44, 30, 80, 30], bo: 0, c: .4, tilt: 3 },                            // happy
+    { m: [86, 112, 102, 106, 118, 112], ry: 14, b: [42, 22, 80, 18], br: [158, 38, 120, 38], bo: 1, c: 0, tilt: -7 },  // curious
+  ];
+  const mirror = (b) => [200 - b[0], b[1], 200 - b[2], b[3]];
+  const norm = (f) => ({ ...f, br: f.br || mirror(f.b), tilt: f.tilt || 0 });
+  let face = norm(IDLE[0]);
+  let idleTimer = 0, idleStep = 0;
+  function startIdle() {
+    if (idleTimer) return;
+    idleStep = 0;
+    morphFace(IDLE[0], true);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    idleTimer = setInterval(() => { idleStep ^= 1; morphFace(IDLE[idleStep], true, 560); }, 2300);
+  }
+  function stopIdle() { clearInterval(idleTimer); idleTimer = 0; }
   let anim = 0;
   let doneKind = null;     // which thank-you screen is showing (re-rendered on language change)
   let sheetCopied = null;  // state of the Google steps sheet
@@ -50,6 +67,20 @@
     renderText();
   }
 
+  // Keep the headline on one line: step the font down to 16px, then allow wrapping as a last resort.
+  function fitHeadline() {
+    const h = $('headline');
+    h.classList.remove('wrap');
+    h.style.fontSize = '';
+    if (!h.clientWidth) return;
+    let size = parseFloat(getComputedStyle(h).fontSize);
+    while (h.scrollWidth > h.clientWidth && size > 16) { size -= 1; h.style.fontSize = size + 'px'; }
+    if (h.scrollWidth > h.clientWidth) h.classList.add('wrap');
+  }
+  // Re-fit whenever the screen appears or changes size (it is measured as 0 while hidden).
+  new ResizeObserver(() => { if (biz) fitHeadline(); }).observe($('rate'));
+  document.fonts?.ready.then(() => { if (biz) fitHeadline(); });
+
   // Business name and subtitle in the guest's language (Arabic versions are optional per business).
   const bizName = () => RC.localName(biz, I18N.lang) || t('r.thisPlace');
   function renderText() {
@@ -57,7 +88,9 @@
     const name = RC.localName(biz, I18N.lang);
     document.title = name ? t('r.docTitle', { name }) : t('r.docTitleDefault');
     $('bizName').textContent = name;
-    $('tagline').textContent = RC.localTagline(biz, I18N.lang) || t('r.taglineDefault');
+    // Owner's own headline if set, otherwise the personalised default.
+    $('headline').textContent = RC.localTagline(biz, I18N.lang) || t('r.headline');
+    fitHeadline();
     renderDots();
     renderChips();
     renderSocials();
@@ -148,7 +181,7 @@
     const moodEl = $('mood');
     moodEl.textContent = mood(r);
     moodEl.classList.add('pop'); setTimeout(() => moodEl.classList.remove('pop'), 180);
-    morphFace(FACES[r], animate);
+    if (r) { stopIdle(); morphFace(FACES[r], animate); } else startIdle();
 
     const cta = $('cta');
     // Google's rules: every guest must be free to review on Google, whatever their rating.
@@ -185,22 +218,27 @@
     $('mouth').setAttribute('d', `M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`);
     $('eyeL').setAttribute('ry', f.ry); $('eyeR').setAttribute('ry', f.ry);
     const [a, b, c, d] = f.b;
+    const [e, g, h, k] = f.br;
     $('browL').setAttribute('d', `M${a} ${b} L${c} ${d}`);
-    $('browR').setAttribute('d', `M${200 - a} ${b} L${200 - c} ${d}`);
+    $('browR').setAttribute('d', `M${e} ${g} L${h} ${k}`);
+    $('face').style.transform = `rotate(${f.tilt}deg)`;
     $('browL').style.opacity = $('browR').style.opacity = f.bo;
     $('cheekL').style.opacity = $('cheekR').style.opacity = f.c;
   }
-  function morphFace(target, animate) {
+  function morphFace(target, animate, duration = 380) {
+    target = norm(target);
     cancelAnimationFrame(anim);
     if (!animate || matchMedia('(prefers-reduced-motion: reduce)').matches) { face = structuredClone(target); drawFace(face); return; }
     const from = structuredClone(face);
     const start = performance.now();
     const step = (now) => {
-      const t = ease(Math.min(1, (now - start) / 380));
+      const t = ease(Math.min(1, (now - start) / duration));
       face = {
         m: from.m.map((v, i) => lerp(v, target.m[i], t)),
         ry: lerp(from.ry, target.ry, t),
         b: from.b.map((v, i) => lerp(v, target.b[i], t)),
+        br: from.br.map((v, i) => lerp(v, target.br[i], t)),
+        tilt: lerp(from.tilt, target.tilt, t),
         bo: lerp(from.bo, target.bo, t),
         c: lerp(from.c, target.c, t),
       };

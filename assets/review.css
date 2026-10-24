@@ -54,13 +54,15 @@ button, input, textarea { font: inherit; color: inherit; }
   text-decoration: underline; text-underline-offset: 4px; opacity: .9;
 }
 
-.intro { margin-top: 28px; }
-.intro h1 { margin: 0; font-size: clamp(28px, 8vw, 34px); line-height: 1.12; font-weight: 800; letter-spacing: -.5px; }
-.intro p { margin: 10px 0 0; font-size: 15px; line-height: 1.5; opacity: .88; max-width: 32ch; }
+.intro { margin-top: 26px; }
+/* One bold, personalised line. JS shrinks the font (down to 16px) so it fits on one line. */
+.headline { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 800; letter-spacing: -.3px; white-space: nowrap; }
+.headline.wrap { white-space: normal; }
 
 .face-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 18px 0 6px; min-height: 210px; }
 .face { width: min(240px, 62vw); height: auto; overflow: visible; }
-.face .eye { fill: var(--face); transform-box: fill-box; transform-origin: center; animation: blink 5s infinite; }
+.face { transform-origin: 50% 60%; }
+.face .eye { fill: var(--face); transform-box: fill-box; transform-origin: center; animation: blink 4s infinite; }
 .face .mouth, .face .brows path { fill: none; stroke: var(--face); stroke-width: 11; stroke-linecap: round; stroke-linejoin: round; }
 .face .brows path { stroke-width: 8; transition: opacity .3s; }
 .face .cheek { fill: #FF5C7A; opacity: 0; transition: opacity .35s; }
@@ -262,7 +264,7 @@ html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] .mood, html[lang="ar"] .
 }
 /* Letter-spacing breaks Arabic letter joining */
 html[lang="ar"] * { letter-spacing: 0 !important; }
-html[lang="ar"] .intro h1 { line-height: 1.35; font-size: clamp(26px, 7.2vw, 31px); }
+html[lang="ar"] .headline { line-height: 1.5; }
 html[lang="ar"] .skip { text-transform: none; font-size: 13px; }
 
 /* Logical properties so the layout mirrors in Arabic */
