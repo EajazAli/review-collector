@@ -121,6 +121,7 @@
     form.nameAr.value = d.nameAr || ''; form.taglineAr.value = d.taglineAr || '';
     form.businessType.value = d.businessType || 'restaurant';
     form.businessType.disabled = !user.isAdmin;
+    form.bookingUrl.value = d.bookingUrl || '';
     renderTypeHint();
     form.slug.readOnly = !user.isAdmin;
     form.from.value = d.theme.from; form.to.value = d.theme.to; form.ink.value = d.theme.ink || '#ffffff'; form.face.value = d.theme.face || '#1e1a17';
@@ -207,7 +208,8 @@
   });
 
   function renderTypeHint() {
-    $('typeHint').textContent = tr(RC.usesIssues(draft) ? 'a.type.hintOn' : 'a.type.hintOff');
+    $('typeHint').textContent = tr(RC.usesIssues(draft) ? 'a.type.hintOn' : RC.usesBooking(draft) ? 'a.type.hintHotel' : 'a.type.hintOff');
+    $('bkField').hidden = !RC.usesBooking(draft);
   }
 
   function markDirty() {
@@ -399,6 +401,10 @@
       </article>`).join('')
       : `<div class="card empty"><h2>${tr('a.nothing.title')}</h2><p class="muted">${tr('a.nothing.text')}</p></div>`;
 
+    // Hotels reply to Booking.com reviews in the Extranet
+    const hasHotel = list.some((b) => RC.usesBooking(b));
+    $('openBookingReviews').hidden = !hasHotel;
+    $('bkTip').hidden = !hasHotel;
     const open = reviews.filter((r) => r.route === 'private' && r.status !== 'resolved').length;
     $('inboxCount').hidden = !open; $('inboxCount').textContent = num(open);
   }

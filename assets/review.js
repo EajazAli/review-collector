@@ -341,12 +341,22 @@
   $('sheetClose').addEventListener('click', () => { $('sheet').hidden = true; });
   $('sheet').addEventListener('click', (e) => { if (e.target === $('sheet')) $('sheet').hidden = true; });
   $('skip').addEventListener('click', () => showDone('skip'));
+  $('bkCopy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('text').value.trim()); toast(t('r.bk.copied')); } catch { /* clipboard blocked */ }
+  });
   $('again').addEventListener('click', reset);
 
   function showDone(kind) {
     const wasShowing = doneKind;
     doneKind = kind;
     $('gAfter').hidden = kind !== 'private' || !RC.googleLink(biz);
+    // Hotels: show how to also leave a Booking.com review
+    $('bkCard').hidden = !RC.usesBooking(biz);
+    if (RC.usesBooking(biz)) {
+      $('bkStep2').textContent = t('r.bk.s2', { name: bizName() });
+      $('bkCopy').hidden = !$('text').value.trim();
+      $('bkOpen').href = RC.BOOKING_TRIPS_URL;
+    }
     $('doneTitle').textContent = t(`r.done.${kind}.t`);
     $('doneText').textContent = t(`r.done.${kind}.x`, { name: bizName() });
     $('rate').hidden = true;

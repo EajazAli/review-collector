@@ -32,6 +32,10 @@ const RC = (() => {
   const BUSINESS_TYPES = ['restaurant', 'hotel', 'salon', 'clinic', 'retail', 'other'];
   const ISSUE_KEYS = ['food', 'service', 'staff', 'clean', 'value'];
   const usesIssues = (b) => (b?.businessType || 'restaurant') === 'restaurant';
+  // Hotels also get Booking.com help (guests: how to review there; owners: reply in the Extranet).
+  const usesBooking = (b) => b?.businessType === 'hotel';
+  const BOOKING_TRIPS_URL = 'https://secure.booking.com/mytrips.html';
+  const BOOKING_EXTRANET_URL = 'https://admin.booking.com/';
   const EMPTY_SOCIAL = { instagram: '', tiktok: '', snapchat: '', facebook: '', x: '', website: '' };
 
   const uid = () => Math.random().toString(36).slice(2, 10);
@@ -60,14 +64,14 @@ const RC = (() => {
 
   // ---------- Row mapping ----------
   const fromRow = (r) => ({
-    id: r.id, slug: r.slug, name: r.name, tagline: r.tagline, nameAr: r.name_ar || '', taglineAr: r.tagline_ar || '', businessType: r.business_type || 'restaurant', logo: r.logo,
+    id: r.id, slug: r.slug, name: r.name, tagline: r.tagline, nameAr: r.name_ar || '', taglineAr: r.tagline_ar || '', businessType: r.business_type || 'restaurant', bookingUrl: r.booking_url || '', logo: r.logo,
     theme: { ...THEMES.sunset, ...(r.theme || {}) }, threshold: r.threshold,
     googleReviewUrl: r.google_review_url, whatsapp: [...(r.whatsapp || []), '', ''].slice(0, 2),
     webhookUrl: r.webhook_url, social: { ...EMPTY_SOCIAL, ...(r.social || {}) },
     createdAt: r.created_at, updatedAt: r.updated_at,
   });
   const toRow = (b) => ({
-    slug: b.slug, name: b.name || '', tagline: b.tagline || '', name_ar: b.nameAr || '', tagline_ar: b.taglineAr || '', business_type: b.businessType || 'restaurant', logo: b.logo || '',
+    slug: b.slug, name: b.name || '', tagline: b.tagline || '', name_ar: b.nameAr || '', tagline_ar: b.taglineAr || '', business_type: b.businessType || 'restaurant', booking_url: (b.bookingUrl || '').trim(), logo: b.logo || '',
     theme: b.theme || {}, threshold: +b.threshold || 4,
     google_review_url: b.googleReviewUrl || '', whatsapp: (b.whatsapp || ['', '']).map((x) => (x || '').trim()),
     webhook_url: b.webhookUrl || '', social: b.social || {},
@@ -338,7 +342,7 @@ const RC = (() => {
   };
 
   return {
-    configured, sb, BUSINESS_TYPES, ISSUE_KEYS, usesIssues, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
+    configured, sb, BUSINESS_TYPES, ISSUE_KEYS, usesIssues, usesBooking, BOOKING_TRIPS_URL, BOOKING_EXTRANET_URL, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
     listMembers, setMembers, submitReview, listReviews, updateReview, photoUrls,

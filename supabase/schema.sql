@@ -159,3 +159,6 @@ alter table public.reviews add constraint reviews_issues_check check (issues <@ 
 alter table public.businesses add column if not exists business_type text not null default 'restaurant';
 alter table public.businesses drop constraint if exists businesses_type_check;
 alter table public.businesses add constraint businesses_type_check check (business_type in ('restaurant','hotel','salon','clinic','retail','other'));
+
+-- Booking.com property page (also in 005_booking.sql)
+alter table public.businesses add column if not exists booking_url text not null default '';

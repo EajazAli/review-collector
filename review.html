@@ -98,6 +98,21 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.3-.5 0-1 .2-3.3-.7-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.3.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>
         <span data-i18n="r.waRetry">Send to the owner on WhatsApp</span>
       </a>
+      <!-- Hotels: how to also review on Booking.com (only guests who booked there can) -->
+      <div class="bk-card" id="bkCard" hidden>
+        <b class="bk-title" data-i18n="r.bk.title">Stayed with us through Booking.com?</b>
+        <p data-i18n="r.bk.text">You can also share your review on Booking.com:</p>
+        <ol class="bk-steps">
+          <li data-i18n="r.bk.s1">Open the Booking.com app or website and sign in.</li>
+          <li id="bkStep2"></li>
+          <li data-i18n-html="r.bk.s3">Tap <b>Write a review</b>. You can also use the review invitation email from Booking.com.</li>
+        </ol>
+        <div class="bk-actions">
+          <button type="button" class="bk-btn" id="bkCopy" data-i18n="r.bk.copy">Copy my review</button>
+          <a class="bk-btn solid" id="bkOpen" href="https://secure.booking.com/mytrips.html" target="_blank" rel="noopener" data-i18n="r.bk.open">Open my Booking.com trips</a>
+        </div>
+        <p class="bk-note" data-i18n="r.bk.note">Only guests who booked on Booking.com can review there, within 3 months of check-out.</p>
+      </div>
       <div class="socials" id="socials"></div>
       <button class="link-g" id="gAfter" type="button" hidden data-i18n-html="r.gAfter">You can also <u>post it to Google</u></button>
       <button class="ghost" id="again" type="button" data-i18n="r.back">Back</button>

@@ -99,6 +99,12 @@
               <div class="inline"><input name="googleReviewUrl" dir="ltr" placeholder="https://g.page/r/XXXX/review" /><button type="button" class="btn" id="testGoogle" data-i18n="a.test">Test</button></div>
             </label>
             <p class="muted small" data-i18n-html="a.google.help">In Google Business Profile, open <b>Ask for reviews</b> and copy the link. A Place ID (starts with <code>ChIJ</code>) also works.</p>
+            <div class="bk-field" id="bkField" hidden>
+              <label class="f"><span data-i18n="a.bk.url">Booking.com property page (optional)</span>
+                <input name="bookingUrl" type="url" dir="ltr" placeholder="https://www.booking.com/hotel/sa/…" />
+              </label>
+              <p class="muted small" data-i18n="a.bk.help">Hotels: after rating, guests are shown how to also review you on Booking.com. You reply to Booking.com reviews in the Booking.com Extranet or Pulse app.</p>
+            </div>
           </div>
 
           <div class="card">
@@ -162,11 +168,13 @@
         <div><h1 data-i18n="a.tab.reviews">Reviews</h1><p class="muted" data-i18n="a.reviews.sub">Every rating from your QR code. Private ones need your attention.</p></div>
         <div class="filters">
           <a class="btn g-btn" id="openGoogleReviews" href="https://business.google.com/reviews" target="_blank" rel="noopener"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span data-i18n="a.openGoogle">Open Google reviews</span></a>
+          <a class="btn bk-btn-admin" id="openBookingReviews" href="https://admin.booking.com/" target="_blank" rel="noopener" hidden><span class="bk-mark" aria-hidden="true">B.</span><span data-i18n="a.bk.reply">Reply on Booking.com</span></a>
           <select id="fBiz"></select>
           <select id="fRoute"><option value="private" data-i18n="a.f.private">Private only</option><option value="google" data-i18n="a.f.google">Sent to Google</option><option value="all" data-i18n="a.f.all">All ratings</option></select>
         </div>
       </header>
       <p class="g-tip" data-i18n-html="a.gTip">To reply on Google, sign in to Google with the account that manages your Business Profile, then use <b>Reply on Google</b>.</p>
+      <p class="g-tip" id="bkTip" hidden data-i18n-html="a.bk.tip">Booking.com reviews are replied to in the <b>Booking.com Extranet</b> (or the Pulse app). Use <b>Reply on Booking.com</b> and sign in with your Booking.com partner account.</p>
       <div class="stats" id="stats"></div>
       <div class="issue-stats" id="issueStats" hidden></div>
       <div class="feed" id="feed"></div>

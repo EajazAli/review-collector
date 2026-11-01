@@ -306,3 +306,21 @@ html[lang="ar"] .skip { text-transform: none; font-size: 13px; }
 @keyframes chipPop { 0% { transform: scale(.92); } 55% { transform: scale(1.07); } 100% { transform: scale(1); } }
 @keyframes tick { to { stroke-dashoffset: 0; } }
 .chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* ---------- Booking.com card (hotels, thank-you screen) ---------- */
+.bk-card {
+  width: 100%; max-width: 380px; margin-top: 10px; text-align: start; display: grid; gap: 8px;
+  background: #fff; color: #1b1b1f; border-radius: 20px; padding: 18px 18px 14px; box-shadow: 0 12px 30px rgba(0,0,0,.18);
+  animation: in .45s .15s both;
+}
+.bk-title { font-size: 16px; font-weight: 800; }
+.bk-card p { margin: 0; font-size: 14px; line-height: 1.45; color: #4b4b55; opacity: 1; max-width: none; }
+.bk-steps { margin: 0; padding-inline-start: 20px; display: grid; gap: 5px; font-size: 14px; line-height: 1.45; color: #2b2b33; }
+.bk-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.bk-btn {
+  flex: 1 1 140px; min-height: 42px; border-radius: 12px; border: 1.5px solid #d6d8e3; background: #fff; color: #1b1b1f;
+  font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; padding: 0 12px;
+}
+.bk-btn.solid { background: #1b1b1f; border-color: #1b1b1f; color: #fff; }
+.bk-card .bk-note { font-size: 12px; color: #75758a; }
+html[lang="ar"] .bk-title { font-family: 'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif; }

@@ -356,3 +356,7 @@ select[name="businessType"]:disabled { opacity: .65; cursor: not-allowed; }
 .type-opt:hover, .type-opt:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; transform: translateY(-2px); }
 .type-ic { font-size: 28px; line-height: 1; }
 @media (max-width: 520px) { .type-grid { grid-template-columns: repeat(2, 1fr); } }
+
+/* Booking.com (hotels) */
+.bk-field { display: grid; gap: 6px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.bk-mark { width: 20px; height: 20px; border-radius: 5px; display: grid; place-items: center; background: var(--text); color: var(--panel); font-weight: 800; font-size: 12px; }
