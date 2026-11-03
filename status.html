@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#F2581E" />
+  <meta name="robots" content="noindex" />
+  <title>Your feedback</title>
+  <link rel="icon" type="image/png" href="assets/brand/HH_Icon_Navy.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/review.css" />
+  <link rel="stylesheet" href="assets/status.css" />
+  <script src="assets/i18n.js"></script>
+  <script src="assets/i18n-review.js"></script>
+  <script src="assets/i18n-status.js"></script>
+</head>
+<body>
+  <div class="bg" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
+
+  <main class="screen st" id="st">
+    <header class="top">
+      <div class="brand">
+        <div class="logo" id="logo"></div>
+        <span class="biz-name" id="bizName"></span>
+      </div>
+      <div class="top-actions">
+        <button class="lang" type="button" data-lang-toggle>العربية</button>
+      </div>
+    </header>
+
+    <div id="body" class="st-body" aria-live="polite">
+      <p class="st-loading" data-i18n="s.loading">Loading your feedback…</p>
+    </div>
+
+    <footer class="powered">
+      <span class="hh" aria-hidden="true"></span>
+      <span data-i18n-html="r.powered">Review Finder by <a href="https://www.hnhmena.com" target="_blank" rel="noopener">H&amp;H Technology</a></span>
+    </footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/store.js"></script>
+  <script src="assets/status.js"></script>
+</body>
+</html>

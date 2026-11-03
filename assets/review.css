@@ -324,3 +324,5 @@ html[lang="ar"] .skip { text-transform: none; font-size: 13px; }
 .bk-btn.solid { background: #1b1b1f; border-color: #1b1b1f; color: #fff; }
 .bk-card .bk-note { font-size: 12px; color: #75758a; }
 html[lang="ar"] .bk-title { font-family: 'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif; }
+.cta.track { margin-top: 10px; max-width: 320px; background: transparent; border: 1.5px solid var(--ink); color: var(--ink); }
+.cta.track svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }

@@ -385,6 +385,7 @@
           <b>${RC.esc(name(r.business_id))}</b>
           <span class="tag ${r.route === 'private' ? 'priv' : 'pub'}">${r.route === 'private' ? tr('a.tag.private') : tr('a.tag.google')}</span>
           ${r.status === 'resolved' ? `<span class="tag">${tr('a.tag.resolved')}</span>` : ''}
+          ${r.guest_verdict ? `<span class="tag verdict ${r.guest_verdict}">${r.guest_verdict === 'fixed' ? '👍' : '👎'} ${tr(`a.fu.v.${r.guest_verdict}`)}</span>` : ''}
           <time>${I18N.fmtDate(r.created_at)}</time>
         </div>
         ${issuesOf(r).length ? `<div class="fb-issues">${issuesOf(r).map((k) => `<span class="tag issue">${ISSUE_ICON[k]} ${tr(`a.issue.${k}`)}</span>`).join('')}</div>` : ''}
@@ -394,9 +395,18 @@
           <span class="who-line">${tr('a.sentToGoogle')}${RC.googleReviewsUrl(biz(r.business_id)) ? ` · <a class="link small" target="_blank" rel="noopener" href="${RC.esc(RC.googleReviewsUrl(biz(r.business_id)))}">${tr('a.seeOnGoogle')}</a>` : ''}</span>
           <a class="btn g-btn" target="_blank" rel="noopener" href="${RC.GOOGLE_REPLY_URL}" title="${tr('a.replyGoogle.title')}"><svg viewBox="0 0 48 48" aria-hidden="true">${document.querySelector('#openGoogleReviews svg').innerHTML}</svg>${tr('a.replyGoogle')}</a>
         </div>` : ''}
+        ${r.route === 'private' && r.ticket ? `<div class="fb-reply">
+          <label class="fb-rl" for="rp-${r.id}">${tr('a.fu.label')}${r.replied_at ? ` <small>· ${tr('a.fu.saved', { when: I18N.fmtDate(r.replied_at) })}</small>` : ''}</label>
+          <textarea id="rp-${r.id}" data-reply="${r.id}" rows="2" maxlength="2000" dir="auto" placeholder="${RC.esc(tr('a.fu.ph'))}">${RC.esc(r.reply || '')}</textarea>
+          <div class="fb-ra">
+            <button class="btn primary" data-save="${r.id}">${tr('a.fu.save')}</button>
+            ${r.guest_phone ? `<button class="btn" data-sendwa="${r.id}">${tr('a.fu.saveWa')}</button>` : ''}
+            <a class="link small" target="_blank" rel="noopener" href="${RC.esc(RC.statusUrl(r.ticket))}">${tr('a.fu.page')}</a>
+          </div>
+        </div>` : ''}
         ${r.route === 'private' ? `<div class="fb-foot">
           <span class="who-line">${RC.esc(r.guest_name || tr('a.anonymous'))}${r.guest_phone ? ` · <span dir="ltr">${RC.esc(r.guest_phone)}</span>` : ''}</span>
-          ${r.guest_phone ? `<a class="btn" target="_blank" rel="noopener" href="${RC.waLink(r.guest_phone, tr('a.replyWa.msg', { name: r.guest_name || '', biz: name(r.business_id) }))}">${tr('a.replyWa')}</a>` : ''}
+          ${r.guest_phone && !r.ticket ? `<a class="btn" target="_blank" rel="noopener" href="${RC.waLink(r.guest_phone, tr('a.replyWa.msg', { name: r.guest_name || '', biz: name(r.business_id) }))}">${tr('a.replyWa')}</a>` : ''}
           <button class="btn" data-toggle="${r.id}">${r.status === 'resolved' ? tr('a.reopen') : tr('a.resolve')}</button>
         </div>` : ''}
       </article>`).join('')
@@ -411,7 +421,32 @@
   }
   $('fBiz').addEventListener('change', renderInbox);
   $('fRoute').addEventListener('change', renderInbox);
+  // WhatsApp message to the guest, in the language they used on the review page.
+  const GUEST_WA = {
+    en: (v) => `Hi${v.name ? ` ${v.name}` : ''}, this is ${v.biz}.\n\n${v.reply}\n\nYou can see this and tell us if it's sorted here:\n${v.link}`,
+    ar: (v) => `مرحباً${v.name ? ` ${v.name}` : ''}، معك ${v.biz}.\n\n${v.reply}\n\nيمكنك رؤية الرد وإخبارنا إن تم حل المشكلة من هنا:\n${v.link}`,
+  };
   $('feed').addEventListener('click', async (e) => {
+    const saveId = e.target.dataset?.save || e.target.dataset?.sendwa;
+    if (saveId) {
+      const r = reviews.find((x) => x.id === saveId);
+      const text = $(`rp-${saveId}`).value.trim();
+      const viaWa = !!e.target.dataset.sendwa;
+      if (viaWa && !text) { toast(tr('a.fu.empty')); return; }
+      // Open WhatsApp first (synchronously) so phones don't block the pop-up, then save.
+      if (viaWa) {
+        const b = list.find((x) => x.id === r.business_id) || {};
+        const lang = r.lang === 'ar' ? 'ar' : 'en';
+        open(RC.waLink(r.guest_phone, GUEST_WA[lang]({ name: r.guest_name, biz: RC.localName(b, lang) || b.name, reply: text, link: RC.statusUrl(r.ticket) })), '_blank', 'noopener');
+      }
+      e.target.disabled = true;
+      try {
+        if (text !== (r.reply || '')) { await RC.updateReview(saveId, { reply: text }); r.reply = text; r.replied_at = text ? new Date().toISOString() : null; }
+        toast(tr(text ? 'a.fu.done' : 'a.fu.cleared'));
+        renderInbox();
+      } catch (err) { e.target.disabled = false; toast(friendly(err)); }
+      return;
+    }
     const id = e.target.dataset?.toggle;
     if (id) {
       const r = reviews.find((x) => x.id === id);

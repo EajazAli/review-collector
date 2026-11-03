@@ -272,6 +272,10 @@
     const res = await RC.submitReview(biz, item, photos);
     await RC.deliver(biz, { ...res.review, slug: biz.slug, photos: photos.length ? photos : undefined });
     cta.classList.remove('busy'); cta.textContent = t('r.send');
+    // Their private follow-up page: the owner's reply appears there and they can say if it was fixed.
+    const track = res.ticket ? RC.statusUrl(res.ticket) : '';
+    $('track').href = track || '#';
+    $('track').hidden = !track;
 
     // Alert the owner on WhatsApp (text only; photos are in their dashboard).
     const owner = (biz.whatsapp || []).find(Boolean);
@@ -286,6 +290,7 @@
         who ? `\nFrom / من: ${who}` : '',
         photos.length ? `\n${photos.length} photo(s) / صور: see your Review Finder dashboard / راجع لوحة Review Finder` : '',
         I18N.lang === 'ar' ? '\n(Guest used Arabic / الضيف استخدم العربية)' : '',
+        track ? `\nFollow-up page / صفحة المتابعة:\n${track}` : '',
       ].filter((x) => x !== '').join('\n');
       const url = RC.waLink(owner, msg);
       $('waRetry').href = url;
@@ -365,7 +370,7 @@
   }
 
   function reset() {
-    photos = []; renderThumbs(); picked.clear(); renderChips(); $('waRetry').hidden = true;
+    photos = []; renderThumbs(); picked.clear(); renderChips(); $('waRetry').hidden = true; $('track').hidden = true;
     $('text').value = ''; $('guestName').value = ''; $('guestPhone').value = '';
     setRating(0, false);
     doneKind = null;

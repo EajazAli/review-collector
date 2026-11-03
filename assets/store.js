@@ -211,6 +211,8 @@ const RC = (() => {
       issues: (item.issues || []).filter((k) => ISSUE_KEYS.includes(k)),
       lang: item.lang === 'ar' ? 'ar' : 'en',
     };
+    // Private feedback gets a secret link so the guest can follow it up (needs supabase/007_follow_up.sql).
+    if (item.route === 'private') review.ticket = token();
     const inDb = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(b.id || '');
     if (!sb || !inDb) return { ok: false, reason: 'not-in-database', review };
     for (let i = 0; i < photos.length; i++) {
@@ -222,11 +224,14 @@ const RC = (() => {
       } catch { /* keep going without this photo */ }
     }
     // Any column the database doesn't have yet is dropped; issues are then kept inside the text.
+    let saved = review;
     const { error } = await withMissingColumns(review, (row) => {
+      saved = row;
       if (!('issues' in row) && review.issues.length && !row.text.startsWith('[')) row = { ...row, text: `[${review.issues.join(', ')}] ${row.text}`.trim() };
       return sb.from('reviews').insert(row);
     });
-    return { ok: !error, error: error?.message, review };
+    const ticket = !error && saved.ticket ? saved.ticket : null;
+    return { ok: !error, error: error?.message, review, ticket };
   }
 
   async function listReviews(businessIds, { since = null, limit = 500 } = {}) {
@@ -234,6 +239,22 @@ const RC = (() => {
     let q = sb.from('reviews').select('*').in('business_id', businessIds);
     if (since) q = q.gte('created_at', since);
     const { data, error } = await q.order('created_at', { ascending: false }).limit(limit);
+    fail(error);
+    return data;
+  }
+
+  function token() {
+    const a = crypto.getRandomValues(new Uint8Array(18));
+    return Array.from(a, (x) => x.toString(36).padStart(2, '0')).join('').slice(0, 28);
+  }
+  // Guest status page: read their own feedback by its secret link, and answer "Did we fix it?".
+  async function getTicket(t) {
+    const { data, error } = await sb.rpc('get_ticket', { t });
+    fail(error);
+    return data;
+  }
+  async function rateTicket(t, v) {
+    const { data, error } = await sb.rpc('rate_ticket', { t, v });
     fail(error);
     return data;
   }
@@ -303,6 +324,8 @@ const RC = (() => {
   // QR codes: this browser's override (Settings) > the site-wide PUBLIC_URL in config.js > the current address.
   const reviewUrl = (b) => `${siteBase(settings().publicUrl || cfg.PUBLIC_URL)}review.html?b=${encodeURIComponent(b.slug)}`;
 
+  const statusUrl = (ticket) => `${siteBase(settings().publicUrl || cfg.PUBLIC_URL)}status.html?t=${encodeURIComponent(ticket)}`;
+
   async function deliver(b, payload) {
     if (!b.webhookUrl) return { ok: false, reason: 'no-webhook' };
     try {
@@ -351,7 +374,7 @@ const RC = (() => {
     configured, sb, BUSINESS_TYPES, ISSUE_KEYS, usesIssues, usesBooking, BOOKING_TRIPS_URL, BOOKING_EXTRANET_URL, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
-    listMembers, setMembers, submitReview, listReviews, cxBenchmarks, updateReview, photoUrls,
-    localName, localTagline, googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
+    listMembers, setMembers, submitReview, listReviews, cxBenchmarks, getTicket, rateTicket, updateReview, photoUrls,
+    localName, localTagline, googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, statusUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
   };
 })();

@@ -162,6 +162,10 @@ const RFInsights = (() => {
     const priv = cur.filter((r) => r.route === 'private'), privPrev = prev.filter((r) => r.route === 'private');
     const open = priv.filter((r) => r.status !== 'resolved').length;
     const rh = resolveHours(cur), rhPrev = resolveHours(prev);
+    // Service recovery: did the owner reply, and did the guest say it was fixed?
+    const replied = (rows) => share(rows, (r) => !!r.reply);
+    const answered = priv.filter((r) => r.guest_verdict), answeredPrev = privPrev.filter((r) => r.guest_verdict);
+    const wonBack = (rows) => share(rows, (r) => r.guest_verdict === 'fixed');
     const typesPresent = TYPES.filter((t) => bizList.some((b) => (b.businessType || 'restaurant') === t));
 
     const filters = `<div class="ix-filters">
@@ -186,6 +190,8 @@ const RFInsights = (() => {
       ${tile(tr('ins.k.google'), pct(share(cur, (r) => r.route === 'google')), delta(share(cur, (r) => r.route === 'google'), share(prev, (r) => r.route === 'google')))}
       ${tile(tr('ins.k.open'), num(open), '', tr('ins.k.openHint', { n: num(priv.length) }))}
       ${tile(tr('ins.k.resolve'), rh == null ? '–' : `${num(+rh.toFixed(rh < 10 ? 1 : 0))}${tr('ins.h')}`, delta(rh, rhPrev, { unit: 'h', invert: true, digits: 1 }), tr('ins.k.resolveHint'))}
+      ${tile(tr('ins.k.replied'), pct(replied(priv)), delta(replied(priv), replied(privPrev)), tr('ins.k.repliedHint'))}
+      ${tile(tr('ins.k.won'), pct(wonBack(answered)), delta(wonBack(answered), wonBack(answeredPrev)), tr('ins.k.wonHint', { a: num(answered.length), n: num(priv.length) }))}
     </div>`;
 
     // Alerts (case management style)
@@ -326,8 +332,8 @@ const RFInsights = (() => {
   function csv() {
     const { cur } = periods();
     const q = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
-    const head = ['date', 'business', 'type', 'rating', 'route', 'issues', 'status', 'resolved_at', 'language', 'text'];
-    const lines = cur.map((r) => [r.created_at, nameOf(r.business_id), typeOf(r.business_id), r.rating, r.route, issuesOf(r).join('|'), r.status, r.resolved_at || '', r.lang || '', textOf(r)].map(q).join(','));
+    const head = ['date', 'business', 'type', 'rating', 'route', 'issues', 'status', 'resolved_at', 'language', 'text', 'reply', 'guest_says'];
+    const lines = cur.map((r) => [r.created_at, nameOf(r.business_id), typeOf(r.business_id), r.rating, r.route, issuesOf(r).join('|'), r.status, r.resolved_at || '', r.lang || '', textOf(r), r.reply || '', r.guest_verdict || ''].map(q).join(','));
     const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `review-finder-cx-${new Date().toISOString().slice(0, 10)}.csv` });
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -363,7 +369,9 @@ const RFInsights = (() => {
         const uniq = [...new Set(issues)];
         const text = priv ? (uniq.length ? pick(words.bad[uniq[0]]) : pick(Object.values(words.bad).flat())) : (rnd() < 0.6 ? pick(words.good) : '');
         const resolved = priv && rnd() < 0.75;
-        reviews.push({ id: `${b.id}-${i}`, business_id: b.id, rating: r, route: priv ? 'private' : 'google', issues: uniq, text, status: resolved ? 'resolved' : 'new',
+        const reply = priv && (resolved || rnd() < 0.3) ? 'Sorry about this, we have fixed it.' : '';
+        const verdict = reply && rnd() < 0.55 ? (rnd() < b.q / 5.6 ? 'fixed' : 'not_fixed') : '';
+        reviews.push({ id: `${b.id}-${i}`, business_id: b.id, rating: r, route: priv ? 'private' : 'google', issues: uniq, text, status: resolved ? 'resolved' : 'new', reply, guest_verdict: verdict,
           created_at: t.toISOString(), resolved_at: resolved ? new Date(+t + (2 + rnd() * 30) * 36e5).toISOString() : null, lang: /[؀-ۿ]/.test(text) || rnd() < 0.4 ? 'ar' : 'en' });
       }
     });
