@@ -209,6 +209,7 @@ const RC = (() => {
       id: uuid(), business_id: b.id, rating: item.rating, route: item.route, text: item.text || '',
       guest_name: item.guestName || '', guest_phone: item.guestPhone || '', images: [], status: 'new',
       issues: (item.issues || []).filter((k) => ISSUE_KEYS.includes(k)),
+      lang: item.lang === 'ar' ? 'ar' : 'en',
     };
     const inDb = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(b.id || '');
     if (!sb || !inDb) return { ok: false, reason: 'not-in-database', review };
@@ -220,22 +221,27 @@ const RC = (() => {
         if (!error) review.images.push(path);
       } catch { /* keep going without this photo */ }
     }
-    let { error } = await sb.from('reviews').insert(review);
-    // Database not yet updated with supabase/003_issues.sql: keep the issues inside the text instead.
-    if (error?.code === 'PGRST204' || error?.code === '42703') {
-      const { issues, ...rest } = review;
-      if (issues.length) rest.text = `[${issues.join(', ')}] ${rest.text}`.trim();
-      ({ error } = await sb.from('reviews').insert(rest));
-    }
+    // Any column the database doesn't have yet is dropped; issues are then kept inside the text.
+    const { error } = await withMissingColumns(review, (row) => {
+      if (!('issues' in row) && review.issues.length && !row.text.startsWith('[')) row = { ...row, text: `[${review.issues.join(', ')}] ${row.text}`.trim() };
+      return sb.from('reviews').insert(row);
+    });
     return { ok: !error, error: error?.message, review };
   }
 
-  async function listReviews(businessIds) {
+  async function listReviews(businessIds, { since = null, limit = 500 } = {}) {
     if (!businessIds.length) return [];
-    const { data, error } = await sb.from('reviews').select('*').in('business_id', businessIds)
-      .order('created_at', { ascending: false }).limit(500);
+    let q = sb.from('reviews').select('*').in('business_id', businessIds);
+    if (since) q = q.gte('created_at', since);
+    const { data, error } = await q.order('created_at', { ascending: false }).limit(limit);
     fail(error);
     return data;
+  }
+
+  // Anonymous averages per business type (needs supabase/006_cx_insights.sql; empty if not run yet).
+  async function cxBenchmarks(since) {
+    const { data, error } = await sb.rpc('cx_benchmarks', { since });
+    return error ? [] : data || [];
   }
   async function updateReview(id, patch) {
     const { error } = await sb.from('reviews').update(patch).eq('id', id);
@@ -345,7 +351,7 @@ const RC = (() => {
     configured, sb, BUSINESS_TYPES, ISSUE_KEYS, usesIssues, usesBooking, BOOKING_TRIPS_URL, BOOKING_EXTRANET_URL, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
-    listMembers, setMembers, submitReview, listReviews, updateReview, photoUrls,
+    listMembers, setMembers, submitReview, listReviews, cxBenchmarks, updateReview, photoUrls,
     localName, localTagline, googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
   };
 })();

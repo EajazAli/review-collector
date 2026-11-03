@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="assets/admin.css" />
   <script src="assets/i18n.js"></script>
   <script src="assets/i18n-admin.js"></script>
+  <script src="assets/i18n-insights.js"></script>
 </head>
 <body class="loading">
   <div class="gate" id="gate"><div class="spinner" data-i18n-aria="common.loading"></div><div class="gate-msg" id="gateMsg" hidden></div></div>
@@ -23,6 +24,7 @@
     <nav>
       <button class="tab active" data-view="businesses"><svg viewBox="0 0 24 24"><path d="M3 10l2-6h14l2 6M4 10v10h16V10M3 10h18M9 20v-5h6v5"/></svg><span id="tabBizLabel" data-i18n="a.tab.businesses">Businesses</span></button>
       <button class="tab" data-view="inbox"><svg viewBox="0 0 24 24"><path d="M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5"/></svg><span data-i18n="a.tab.reviews">Reviews</span><span class="pill" id="inboxCount" hidden></span></button>
+      <button class="tab" data-view="insights"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span data-i18n="a.tab.insights">CX Insights</span></button>
       <button class="tab" data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="a.tab.settings">Settings</span></button>
     </nav>
     <button class="nav-lang" type="button" data-lang-toggle>العربية</button>
@@ -180,6 +182,12 @@
       <div class="feed" id="feed"></div>
     </section>
 
+    <!-- INSIGHTS -->
+    <section class="view" id="view-insights" hidden>
+      <header class="page-head"><div><h1 data-i18n="a.tab.insights">CX Insights</h1><p class="muted" data-i18n="ins.sub">How guests feel across your businesses, what goes wrong, and where to act first.</p></div></header>
+      <div id="insights"></div>
+    </section>
+
     <!-- SETTINGS -->
     <section class="view" id="view-settings" hidden>
       <header class="page-head"><div><h1 data-i18n="a.tab.settings">Settings</h1><p class="muted" data-i18n="a.settings.sub">Changes save straight to the cloud. Guests see them right away.</p></div></header>
@@ -227,6 +235,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script src="assets/config.js"></script>
   <script src="assets/store.js"></script>
+  <script src="assets/insights.js"></script>
   <script src="assets/admin.js"></script>
 </body>
 </html>

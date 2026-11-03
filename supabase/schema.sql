@@ -162,3 +162,5 @@ alter table public.businesses add constraint businesses_type_check check (busine
 
 -- Booking.com property page (also in 005_booking.sql)
 alter table public.businesses add column if not exists booking_url text not null default '';
+
+-- CX Insights (also in 006_cx_insights.sql): see that file for lang, resolved_at, stamp_resolved_at() and cx_benchmarks().

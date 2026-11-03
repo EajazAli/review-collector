@@ -28,6 +28,7 @@
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === v));
     document.querySelectorAll('.view').forEach((s) => (s.hidden = s.id !== `view-${v}`));
     if (v === 'inbox') loadReviews();
+    if (v === 'insights') RFInsights.mount($('insights'), { user, list });
     if (v === 'settings') { $('publicUrl').value = RC.settings().publicUrl; $('pwEmail').textContent = user.email; }
     history.replaceState(null, '', `#${v}`);
   }
@@ -493,6 +494,7 @@
     }
     renderList();
     if (!$('view-inbox').hidden || reviews.length) renderInbox();
+    if (!$('view-insights').hidden) RFInsights.refresh();
   }
   window.addEventListener('langchange', renderLang);
   document.querySelectorAll('[data-set-lang]').forEach((b) => b.addEventListener('click', () => I18N.set(b.dataset.setLang)));
@@ -528,7 +530,7 @@
     document.body.classList.remove('loading');
 
     const v = location.hash.slice(1);
-    if (['businesses', 'inbox', 'settings'].includes(v)) showView(v);
+    if (['businesses', 'inbox', 'insights', 'settings'].includes(v)) showView(v);
     // Load counts for the badge in the background.
     RC.listReviews(list.map((b) => b.id)).then((r) => { reviews = r; renderInbox(); }).catch(() => {});
 
