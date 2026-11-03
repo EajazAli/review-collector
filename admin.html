@@ -77,6 +77,21 @@
             <p class="note" data-i18n-html="a.logins.note">To create a login: Supabase → <b>Authentication → Users → Add user → Create new user</b>, enter the same email and a password, tick <b>Auto Confirm User</b>. Then send the client the login page and their password.</p>
           </div>
 
+          <div class="card admin-only" id="groupCard">
+            <h2 data-i18n="a.grp">Group &amp; branch</h2>
+            <p class="muted small" data-i18n="a.grp.sub">For brands with several locations. Each branch keeps its own QR code and reviews; the group sees all branches together in CX Insights.</p>
+            <div class="grp-fields">
+              <label class="f"><span data-i18n="a.grp.group">Group</span><select name="groupId"></select></label>
+              <label class="f"><span data-i18n="a.grp.branch">Branch name</span><input name="branchName" data-i18n-ph="a.grp.branch.ph" /></label>
+              <label class="f"><span data-i18n="a.grp.branchAr">Branch name in Arabic (optional)</span><input name="branchNameAr" dir="rtl" lang="ar" /></label>
+            </div>
+            <div id="groupLogins" hidden>
+              <h3 class="grp-h" data-i18n="a.grp.logins">Group logins</h3>
+              <p class="muted small" data-i18n="a.grp.logins.sub">These logins see every branch in this group, including branches you add later, with group-level analytics. Shared by all branches of the group.</p>
+              <textarea name="groupMembers" rows="2" dir="ltr" placeholder="owner@brand.com"></textarea>
+            </div>
+          </div>
+
           <div class="card">
             <h2 data-i18n="a.threshold">Review threshold</h2>
             <p class="muted" data-i18n="a.threshold.sub">Ratings at or above the threshold are sent to Google. Lower ratings go privately to the owner, so they get a second chance.</p>

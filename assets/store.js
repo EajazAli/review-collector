@@ -68,6 +68,7 @@ const RC = (() => {
     theme: { ...THEMES.sunset, ...(r.theme || {}) }, threshold: r.threshold,
     googleReviewUrl: r.google_review_url, whatsapp: [...(r.whatsapp || []), '', ''].slice(0, 2),
     webhookUrl: r.webhook_url, social: { ...EMPTY_SOCIAL, ...(r.social || {}) },
+    groupId: r.group_id || '', branchName: r.branch_name || '', branchNameAr: r.branch_name_ar || '',
     createdAt: r.created_at, updatedAt: r.updated_at,
   });
   const toRow = (b) => ({
@@ -75,6 +76,7 @@ const RC = (() => {
     theme: b.theme || {}, threshold: +b.threshold || 4,
     google_review_url: b.googleReviewUrl || '', whatsapp: (b.whatsapp || ['', '']).map((x) => (x || '').trim()),
     webhook_url: b.webhookUrl || '', social: b.social || {},
+    group_id: b.groupId || null, branch_name: (b.branchName || '').trim(), branch_name_ar: (b.branchNameAr || '').trim(),
   });
   const fail = (error) => { if (error) throw new Error(error.message || String(error)); };
 
@@ -112,9 +114,15 @@ const RC = (() => {
   async function listBusinesses(user) {
     let q = sb.from('businesses').select('*').order('created_at');
     if (!user.isAdmin) {
-      const { data: m, error } = await sb.from('business_members').select('business_id').eq('email', user.email);
-      fail(error);
-      const ids = (m || []).map((x) => x.business_id);
+      // Branches linked directly or through a group (supabase/008_groups.sql); older databases: direct links only.
+      let ids;
+      const r = await sb.rpc('my_business_ids');
+      if (!r.error) ids = (r.data || []).map((x) => (typeof x === 'string' ? x : x.my_business_ids));
+      else {
+        const { data: m, error } = await sb.from('business_members').select('business_id').eq('email', user.email);
+        fail(error);
+        ids = (m || []).map((x) => x.business_id);
+      }
       if (!ids.length) return [];
       q = q.in('id', ids);
     }
@@ -145,7 +153,7 @@ const RC = (() => {
   // Retry without any column the database doesn't have yet (a supabase/00x_*.sql update not run).
   async function withMissingColumns(row, run) {
     let res = await run(row);
-    for (let tries = 0; tries < 4 && (res.error?.code === 'PGRST204' || res.error?.code === '42703'); tries++) {
+    for (let tries = 0; tries < 8 && (res.error?.code === 'PGRST204' || res.error?.code === '42703'); tries++) {
       const col = /'(\w+)' column|column \w+\.(\w+)/.exec(res.error.message || '');
       const name = col && (col[1] || col[2]);
       if (!name || !(name in row)) break;
@@ -172,6 +180,32 @@ const RC = (() => {
   async function deleteBusiness(id) {
     const { error } = await sb.from('businesses').delete().eq('id', id);
     fail(error);
+  }
+
+  // ---------- Groups (brands with several branches; needs supabase/008_groups.sql) ----------
+  async function listGroups() {
+    if (!sb) return [];
+    const { data, error } = await sb.from('business_groups').select('*').order('name');
+    return error ? [] : data.map((g) => ({ id: g.id, name: g.name, nameAr: g.name_ar || '' }));
+  }
+  async function createGroup(name, nameAr = '') {
+    const { data, error } = await sb.from('business_groups').insert({ name: name.trim(), name_ar: nameAr.trim() }).select().single();
+    fail(error);
+    return { id: data.id, name: data.name, nameAr: data.name_ar || '' };
+  }
+  async function listGroupMembers(groupId) {
+    const { data, error } = await sb.from('group_members').select('email').eq('group_id', groupId).order('email');
+    fail(error);
+    return data.map((r) => r.email);
+  }
+  async function setGroupMembers(groupId, emails) {
+    const clean = [...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+    const current = await listGroupMembers(groupId);
+    const add = clean.filter((e) => !current.includes(e));
+    const del = current.filter((e) => !clean.includes(e));
+    if (add.length) fail((await sb.from('group_members').insert(add.map((email) => ({ group_id: groupId, email })))).error);
+    if (del.length) fail((await sb.from('group_members').delete().eq('group_id', groupId).in('email', del)).error);
+    return clean;
   }
 
   // Import (admin): upsert by slug, uploading any embedded logos.
@@ -279,6 +313,13 @@ const RC = (() => {
   // falls back to a built-in default so an English line never appears on an Arabic page.
   const DEFAULT_TAGLINE_EN = 'Your feedback helps us get better every day.';
   const localName = (b, lang) => ((lang === 'ar' && b.nameAr) || b.name || '').trim();
+  const groupName = (g, lang) => (g ? ((lang === 'ar' && g.nameAr) || g.name || '').trim() : '');
+  const branchName = (b, lang) => ((lang === 'ar' && b.branchNameAr) || b.branchName || '').trim();
+  // "Al Bahr Seafood · Tahlia Street" — the branch is added only when set and not already in the name.
+  function displayName(b, lang) {
+    const n = localName(b, lang), br = branchName(b, lang);
+    return br && !n.includes(br) ? `${n} · ${br}` : n;
+  }
   function localTagline(b, lang) {
     if (lang === 'ar') return (b.taglineAr || '').trim();
     const v = (b.tagline || '').trim();
@@ -375,6 +416,7 @@ const RC = (() => {
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
     listMembers, setMembers, submitReview, listReviews, cxBenchmarks, getTicket, rateTicket, updateReview, photoUrls,
-    localName, localTagline, googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, statusUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
+    listGroups, createGroup, listGroupMembers, setGroupMembers,
+    localName, groupName, branchName, displayName, localTagline, googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, statusUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
   };
 })();

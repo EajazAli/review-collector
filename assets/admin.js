@@ -15,6 +15,7 @@
 
   let user = null;        // { email, isAdmin }
   let list = [];          // businesses this login can manage
+  let groups = [];        // brands with several branches (business_groups)
   let currentId = null;
   let draft = null;
   let dirty = false;
@@ -28,19 +29,25 @@
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === v));
     document.querySelectorAll('.view').forEach((s) => (s.hidden = s.id !== `view-${v}`));
     if (v === 'inbox') loadReviews();
-    if (v === 'insights') RFInsights.mount($('insights'), { user, list });
+    if (v === 'insights') RFInsights.mount($('insights'), { user, list, groups });
     if (v === 'settings') { $('publicUrl').value = RC.settings().publicUrl; $('pwEmail').textContent = user.email; }
     history.replaceState(null, '', `#${v}`);
   }
 
   // ---------- Business list ----------
+  const groupOf = (b) => groups.find((g) => g.id === b.groupId);
+  // Branches of the same group next to each other; standalone businesses keep their order.
+  function sortedList() {
+    const key = (b) => (groupOf(b) ? `0 ${RC.groupName(groupOf(b), 'en').toLowerCase()} ${RC.branchName(b, 'en').toLowerCase()}` : '1');
+    return list.map((b, i) => [b, i]).sort((a, z) => key(a[0]).localeCompare(key(z[0])) || a[1] - z[1]).map((x) => x[0]);
+  }
   function renderList() {
-    $('bizList').innerHTML = list.map((b) => {
+    $('bizList').innerHTML = sortedList().map((b) => {
       const t = b.theme || RC.THEMES.sunset;
       const av = b.logo ? `<img src="${RC.esc(b.logo)}" alt="">` : RC.esc(RC.initials(b.name));
       return `<button class="biz ${b.id === currentId ? 'active' : ''}" data-id="${b.id}">
         <span class="av" style="background:linear-gradient(150deg,${t.from},${t.to})">${av}</span>
-        <span><b>${RC.esc(RC.localName(b, I18N.lang) || tr('a.untitled'))}</b><small>${tr('a.thresholdShort', { n: num(b.threshold) })} · <span dir="ltr">/${RC.esc(b.slug)}</span></small></span></button>`;
+        <span>${groupOf(b) ? `<span class="grp-tag">${RC.esc(RC.groupName(groupOf(b), I18N.lang))}</span>` : ''}<b>${RC.esc(RC.displayName(b, I18N.lang) || tr('a.untitled'))}</b><small>${tr('a.thresholdShort', { n: num(b.threshold) })} · <span dir="ltr">/${RC.esc(b.slug)}</span></small></span></button>`;
     }).join('');
     $('emptyState').hidden = list.length > 0;
     // A client with a single business doesn't need the switcher.
@@ -65,8 +72,41 @@
     if (user.isAdmin) {
       try { draft.members = (await RC.listMembers(id)).join('\n'); form.members.value = draft.members; }
       catch (e) { toast(e.message); }
+      await loadGroupMembers();
     }
   }
+  async function loadGroupMembers() {
+    draft.groupMembers = '';
+    if (draft.groupId) {
+      try { draft.groupMembers = (await RC.listGroupMembers(draft.groupId)).join('\n'); } catch { /* 008 not run yet */ }
+    }
+    renderGroupField();
+  }
+
+  // ---------- Group & branch ----------
+  function renderGroupField() {
+    if (!draft) return;
+    form.groupId.innerHTML = `<option value="">${tr('a.grp.none')}</option>`
+      + groups.map((g) => `<option value="${g.id}">${RC.esc(RC.groupName(g, I18N.lang))} · ${tr('a.grp.count', { n: num(list.filter((b) => b.groupId === g.id).length) })}</option>`).join('')
+      + `<option value="__new">${tr('a.grp.new')}</option>`;
+    form.groupId.value = draft.groupId || '';
+    form.branchName.value = draft.branchName || '';
+    form.branchNameAr.value = draft.branchNameAr || '';
+    form.groupMembers.value = draft.groupMembers || '';
+    $('groupLogins').hidden = !draft.groupId;
+  }
+  form.groupId.addEventListener('change', async () => {
+    if (form.groupId.value !== '__new') { draft.groupId = form.groupId.value; markDirty(); await loadGroupMembers(); return; }
+    const name = (prompt(tr('a.grp.newPrompt'), RC.localName(draft, 'en')) || '').trim();
+    if (!name) { renderGroupField(); return; }
+    try {
+      const g = await RC.createGroup(name);
+      groups.push(g);
+      draft.groupId = g.id; markDirty();
+      await loadGroupMembers();
+      toast(tr('a.grp.created', { name }));
+    } catch (err) { toast(friendly(err)); renderGroupField(); }
+  });
 
   function addBusiness() {
     if (dirty && !confirm(tr('t.discard'))) return;
@@ -130,13 +170,14 @@
     form.wa0.value = d.whatsapp[0] || ''; form.wa1.value = d.whatsapp[1] || '';
     form.webhookUrl.value = d.webhookUrl || '';
     form.members.value = d.members || '';
+    renderGroupField();
     SOCIAL_KEYS.forEach((k) => (form[`social_${k}`].value = d.social[k] || ''));
     renderLogo(); renderThreshold(); renderSwatches();
   }
 
   form.addEventListener('input', (e) => {
     const n = e.target.name;
-    if (!n || !draft) return;
+    if (!n || !draft || n === 'groupId') return;
     const v = e.target.value;
     if (n === 'bizName') {
       const auto = user.isAdmin && (!draft.slug || draft.slug === RC.slugify(draft.name) || /^new-business(-\d+)?$/.test(draft.slug));
@@ -231,8 +272,9 @@
     try {
       const saved = await RC.saveBusiness(draft);
       if (user.isAdmin) draft.members = (await RC.setMembers(draft.id, (draft.members || '').split(/[\s,;]+/))).join('\n');
+      if (user.isAdmin && saved.groupId) draft.groupMembers = (await RC.setGroupMembers(saved.groupId, (draft.groupMembers || '').split(/[\s,;]+/))).join('\n');
       list = list.map((b) => (b.id === saved.id ? saved : b));
-      draft = { ...structuredClone(saved), members: draft.members };
+      draft = { ...structuredClone(saved), members: draft.members, groupMembers: saved.groupId ? draft.groupMembers : '' };
       fillForm();
       dirty = false;
       $('saveStatus').textContent = tr('a.st.saved');
@@ -351,7 +393,10 @@
   function renderInbox() {
     const fb = $('fBiz');
     const cur = fb.value || 'all';
-    fb.innerHTML = `<option value="all">${tr('a.f.allBiz')}</option>` + list.map((b) => `<option value="${b.id}">${RC.esc(RC.localName(b, I18N.lang))}</option>`).join('');
+    const opt = (b) => `<option value="${b.id}">${RC.esc(RC.displayName(b, I18N.lang))}</option>`;
+    fb.innerHTML = `<option value="all">${tr('a.f.allBiz')}</option>`
+      + groups.filter((g) => list.some((b) => b.groupId === g.id)).map((g) => `<optgroup label="${RC.esc(RC.groupName(g, I18N.lang))}">${list.filter((b) => b.groupId === g.id).map(opt).join('')}</optgroup>`).join('')
+      + list.filter((b) => !groupOf(b)).map(opt).join('');
     fb.value = list.some((b) => b.id === cur) ? cur : 'all';
     fb.hidden = list.length < 2;
 
@@ -377,7 +422,7 @@
     const route = $('fRoute').value;
     const shown = route === 'all' ? scoped : scoped.filter((r) => r.route === route);
     const biz = (id) => list.find((b) => b.id === id) || {};
-    const name = (id) => biz(id).name || '';
+    const name = (id) => (biz(id).id ? RC.displayName(biz(id), I18N.lang) : '');
     $('feed').innerHTML = shown.length ? shown.map((r) => `
       <article class="fb ${r.status === 'resolved' ? 'resolved' : ''}">
         <div class="fb-top">
@@ -528,6 +573,7 @@
       if (dirty) $('saveStatus').textContent = tr('a.st.unsaved');
     }
     renderList();
+    renderGroupField();
     if (!$('view-inbox').hidden || reviews.length) renderInbox();
     if (!$('view-insights').hidden) RFInsights.refresh();
   }
@@ -560,6 +606,7 @@
 
     buildStaticControls();
     try { list = await RC.listBusinesses(user); } catch (e) { toast(friendly(e)); }
+    groups = await RC.listGroups();
     $('preview').src = 'review.html?preview=1';
     if (list[0]) await select(list[0].id); else renderList();
     document.body.classList.remove('loading');

@@ -374,7 +374,7 @@ select[name="businessType"]:disabled { opacity: .65; cursor: not-allowed; }
 :root[data-theme="dark"] { --ix-bar: #5598e7; --ix-track: #161A30; --ix-grid: #1A1E35;
   --ix-h1: #0d366b; --ix-h2: #104281; --ix-h3: #1c5cab; --ix-h4: #2a78d6; --ix-h5: #5598e7; --ix-h6: #9ec5f4; }
 
-#insights { display: grid; gap: 16px; }
+#insights { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 #insights h3 { margin: 0 0 2px; font-size: 16px; }
 #insights .small { font-size: 12.5px; margin: 0 0 14px; }
 .ix-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
@@ -468,3 +468,17 @@ select[name="businessType"]:disabled { opacity: .65; cursor: not-allowed; }
 .tag.verdict.fixed { background: #E7F6EC; color: #0B6B2E; }
 .tag.verdict.not_fixed { background: #FDECEA; color: #A8231A; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag.verdict.fixed { background: #15301F; color: #6CE9A6; } :root:not([data-theme="light"]) .tag.verdict.not_fixed { background: #3B1C1A; color: #F97066; } }
+
+/* Group & branch */
+.grp-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.grp-h { margin: 18px 0 2px; font-size: 15px; }
+#groupLogins textarea { width: 100%; border: 1px solid var(--line); background: var(--bg); color: var(--text); border-radius: 11px; padding: 10px 12px; font: inherit; font-size: 14px; }
+.biz .grp-tag { display: block; font-size: 11px; font-weight: 700; color: var(--accent); }
+@media (max-width: 860px) { .grp-fields { grid-template-columns: 1fr; } }
+.ix-group { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); border-inline-start: 4px solid var(--accent); }
+.ix-group .ix-gi { font-size: 22px; }
+.ix-group div { display: grid; gap: 2px; }
+.ix-group b { font-size: 16px; }
+.ix-group span { font-size: 13px; color: var(--muted); }
+.ix-click { cursor: pointer; }
+.ix-click:hover td:first-child b { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }

@@ -15,10 +15,12 @@ const RFInsights = (() => {
   const ISSUE_ICON = { food: '🍽️', service: '⏱️', staff: '🙋', clean: '🧹', value: '💸' };
   const TYPES = RC.BUSINESS_TYPES;
 
-  let ctx = null;       // { user, list }
-  let state = { days: 30, type: 'all', biz: 'all', sample: false, sort: 'csat' };
+  let ctx = null;       // { user, list, groups }
+  let state = { days: 30, type: 'all', group: 'all', biz: 'all', sample: false, sort: 'csat' };
   let raw = [];         // reviews covering current + previous period
   let bizList = [];     // businesses in scope (real or sample)
+  let groupList = [];   // groups (brands) those businesses belong to
+  let viewGroup = null; // the group being shown as a whole, if any
   let bench = [];
   let root = null;
 
@@ -27,12 +29,20 @@ const RFInsights = (() => {
   const issuesOf = (r) => (r.issues?.length ? r.issues : ((r.text || '').match(LEGACY)?.[1].split(/,\s*/) || []));
   const textOf = (r) => (r.text || '').replace(LEGACY, '');
   const typeOf = (id) => bizList.find((b) => b.id === id)?.businessType || 'restaurant';
-  const nameOf = (id) => { const b = bizList.find((x) => x.id === id); return b ? (RC.localName(b, I18N.lang) || b.slug) : ''; };
+  const nameOf = (id) => { const b = bizList.find((x) => x.id === id); return b ? (RC.displayName(b, I18N.lang) || b.slug) : ''; };
+  const groupIdOf = (id) => bizList.find((b) => b.id === id)?.groupId || '';
+  const groupById = (gid) => groupList.find((g) => g.id === gid);
+  const gName = (g) => RC.groupName(g, I18N.lang);
+  // Inside a group view the branch name alone is enough ("Tahlia Street"); elsewhere the full name.
+  const label = (b) => (viewGroup && b.groupId === viewGroup.id && RC.branchName(b, I18N.lang)) || RC.displayName(b, I18N.lang) || b.slug;
+  const inScope = () => bizList.filter((b) => (state.group === 'all' || b.groupId === state.group)
+    && (state.type === 'all' || (b.businessType || 'restaurant') === state.type));
 
   async function load() {
     const span = state.days ? state.days * 2 : null;
-    if (state.sample) { const s = sample(); bizList = s.biz; raw = s.reviews; bench = []; return; }
+    if (state.sample) { const s = sample(); bizList = s.biz; groupList = s.groups; raw = s.reviews; bench = []; return; }
     bizList = ctx.list;
+    groupList = (ctx.groups || []).filter((g) => bizList.some((b) => b.groupId === g.id));
     const since = span ? new Date(Date.now() - span * DAY).toISOString() : null;
     raw = await RC.listReviews(bizList.map((b) => b.id), { since, limit: 10000 });
     bench = ctx.user.isAdmin ? [] : await RC.cxBenchmarks(new Date(Date.now() - (state.days || 3650) * DAY).toISOString());
@@ -40,6 +50,7 @@ const RFInsights = (() => {
 
   function scoped(rows) {
     return rows.filter((r) => (state.biz === 'all' || r.business_id === state.biz)
+      && (state.group === 'all' || groupIdOf(r.business_id) === state.group)
       && (state.type === 'all' || typeOf(r.business_id) === state.type));
   }
   function periods() {
@@ -158,7 +169,11 @@ const RFInsights = (() => {
   function draw() {
     const { cur, prev } = periods();
     const admin = ctx.user.isAdmin;
-    const multi = bizList.length > 1;
+    const scope = inScope();
+    const multi = scope.length > 1;
+    // Group view: a group was picked, or every business this login sees belongs to the same group.
+    viewGroup = state.group !== 'all' ? groupById(state.group)
+      : (scope.length > 1 && scope.every((b) => b.groupId && b.groupId === scope[0].groupId) ? groupById(scope[0].groupId) : null);
     const priv = cur.filter((r) => r.route === 'private'), privPrev = prev.filter((r) => r.route === 'private');
     const open = priv.filter((r) => r.status !== 'resolved').length;
     const rh = resolveHours(cur), rhPrev = resolveHours(prev);
@@ -171,11 +186,15 @@ const RFInsights = (() => {
     const filters = `<div class="ix-filters">
       <div class="ix-seg" role="group" aria-label="${esc(tr('ins.period'))}">${[7, 30, 90, 365, 0].map((d) => `<button type="button" data-days="${d}" class="${state.days === d ? 'on' : ''}">${tr(d ? `ins.d${d}` : 'ins.all')}</button>`).join('')}</div>
       ${admin && typesPresent.length > 1 ? `<select data-f="type"><option value="all">${tr('ins.allTypes')}</option>${typesPresent.map((t) => `<option value="${t}" ${state.type === t ? 'selected' : ''}>${tr(`a.type.${t}`)}</option>`).join('')}</select>` : ''}
-      ${multi ? `<select data-f="biz"><option value="all">${tr('a.f.allBiz')}</option>${bizList.map((b) => `<option value="${b.id}" ${state.biz === b.id ? 'selected' : ''}>${esc(RC.localName(b, I18N.lang) || b.slug)}</option>`).join('')}</select>` : ''}
+      ${groupList.length && (admin || groupList.length > 1 || bizList.some((b) => !b.groupId)) ? `<select data-f="group"><option value="all">${tr('ins.allGroups')}</option>${groupList.map((g) => `<option value="${g.id}" ${state.group === g.id ? 'selected' : ''}>${esc(gName(g))}</option>`).join('')}</select>` : ''}
+      ${multi ? `<select data-f="biz"><option value="all">${tr(viewGroup ? 'ins.allBranches' : 'a.f.allBiz')}</option>${scope.map((b) => `<option value="${b.id}" ${state.biz === b.id ? 'selected' : ''}>${esc(RC.displayName(b, I18N.lang) || b.slug)}</option>`).join('')}</select>` : ''}
       <span class="ix-sp"></span>
       <label class="ix-sample"><input type="checkbox" data-f="sample" ${state.sample ? 'checked' : ''}/> ${tr('ins.sample')}</label>
       <button type="button" class="btn" data-act="csv">${tr('ins.csv')}</button>
-    </div>${state.sample ? `<p class="ix-banner">${tr('ins.sampleBanner')}</p>` : ''}`;
+    </div>${state.sample ? `<p class="ix-banner">${tr('ins.sampleBanner')}</p>` : ''}
+    ${viewGroup ? `<div class="ix-group"><span class="ix-gi" aria-hidden="true">🏢</span><div><b>${esc(gName(viewGroup))}</b><span>${state.biz === 'all'
+      ? tr('ins.grp.all', { n: num(scope.length) })
+      : tr('ins.grp.one', { branch: esc(label(bizList.find((b) => b.id === state.biz) || {})) })}</span></div></div>` : ''}`;
 
     if (!cur.length) {
       root.innerHTML = filters + `<div class="card empty"><h2>${tr('ins.emptyT')}</h2><p class="muted">${tr('ins.emptyX')}</p></div>`;
@@ -199,9 +218,9 @@ const RFInsights = (() => {
     const now = Date.now();
     const stale = priv.filter((r) => r.status !== 'resolved' && now - new Date(r.created_at) > 48 * 36e5);
     if (stale.length) alerts.push(['critical', tr('ins.al.stale', { n: num(stale.length) })]);
-    bizList.forEach((b) => {
+    scope.forEach((b) => {
       const c = cur.filter((r) => r.business_id === b.id), p = prev.filter((r) => r.business_id === b.id);
-      if (c.length >= 5 && p.length >= 5 && csat(p) - csat(c) >= 10) alerts.push(['serious', tr('ins.al.drop', { name: RC.localName(b, I18N.lang) || b.slug, a: pct(csat(p)), b: pct(csat(c)) })]);
+      if (c.length >= 5 && p.length >= 5 && csat(p) - csat(c) >= 10) alerts.push(['serious', tr('ins.al.drop', { name: label(b), a: pct(csat(p)), b: pct(csat(c)) })]);
     });
     const topIssue = ISSUES.map((k) => [k, priv.filter((r) => issuesOf(r).includes(k)).length]).sort((a, b) => b[1] - a[1])[0];
     if (topIssue && topIssue[1] >= 3) alerts.push(['warning', tr('ins.al.issue', { issue: tr(`a.issue.${topIssue[0]}`), n: num(topIssue[1]) })]);
@@ -227,8 +246,9 @@ const RFInsights = (() => {
 
     // CSAT by business type (portfolio) or benchmark (owner)
     let segHtml = '';
-    if (admin && typesPresent.length) {
-      const rows = typesPresent.map((t) => { const rr = cur.filter((r) => typeOf(r.business_id) === t); return { label: tr(`a.type.${t}`), value: csat(rr), sub: ` · ${num(rr.length)}` }; }).filter((x) => x.value != null);
+    const typesInScope = typesPresent.filter((t) => scope.some((b) => (b.businessType || 'restaurant') === t));
+    if (admin && typesInScope.length > 1) {
+      const rows = typesInScope.map((t) => { const rr = cur.filter((r) => typeOf(r.business_id) === t); return { label: tr(`a.type.${t}`), value: csat(rr), sub: ` · ${num(rr.length)}` }; }).filter((x) => x.value != null);
       segHtml = `<div class="card"><h3>${tr('ins.c.byType')}</h3><p class="muted small">${tr('ins.c.byTypeSub')}</p>${bars(rows, { max: 100, fmt: pct, tip: (i) => `${i.label}: ${pct(i.value)} CSAT` })}</div>`;
     } else if (!admin) {
       const myType = bizList[0]?.businessType || 'restaurant';
@@ -238,31 +258,50 @@ const RFInsights = (() => {
         : `<p class="ix-empty">${tr('ins.benchSoon')}</p>`}</div>`;
     }
 
+    // Group comparison: each brand's totals across its branches
+    let groupsHtml = '';
+    const groupsShown = groupList.filter((g) => scope.some((b) => b.groupId === g.id));
+    if (!viewGroup && groupsShown.length) {
+      const rows = groupsShown.map((g) => {
+        const ids = scope.filter((b) => b.groupId === g.id).map((b) => b.id);
+        const c = cur.filter((r) => ids.includes(r.business_id)), p = prev.filter((r) => ids.includes(r.business_id));
+        const per = ids.map((id) => [id, csat(c.filter((r) => r.business_id === id))]).filter((x) => x[1] != null).sort((a, z) => z[1] - a[1]);
+        const pr = c.filter((r) => r.route === 'private'), ans = pr.filter((r) => r.guest_verdict);
+        return { g, branches: ids.length, n: c.length, csat: csat(c), d: c.length && p.length ? csat(c) - csat(p) : null, won: wonBack(ans), best: per[0], worst: per.length > 1 ? per[per.length - 1] : null };
+      }).filter((r) => r.n).sort((a, z) => (z.csat ?? -1) - (a.csat ?? -1));
+      const br = (x) => (x ? `${esc(label(bizList.find((b) => b.id === x[0])))} <small class="muted">${pct(x[1])}</small>` : '–');
+      if (rows.length) groupsHtml = `<div class="card"><h3>${tr('ins.c.groups')}</h3><p class="muted small">${tr('ins.c.groupsSub')}</p>
+        <div class="ix-tablewrap"><table class="ix-table"><thead><tr><th>${tr('ins.t.group')}</th><th>${tr('ins.t.branches')}</th><th>${tr('ins.t.n')}</th><th>${tr('ins.k.csat')}</th><th>${tr('ins.t.change')}</th><th>${tr('ins.k.won')}</th><th>${tr('ins.t.best')}</th><th>${tr('ins.t.worst')}</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr class="ix-click" data-group="${r.g.id}" title="${esc(tr('ins.t.open'))}"><td><b>${esc(gName(r.g))}</b></td><td>${num(r.branches)}</td><td>${num(r.n)}</td><td><b>${pct(r.csat)}</b></td>
+          <td>${r.d == null ? '–' : Math.round(r.d) === 0 ? '<span class="ix-delta flat">→ 0</span>' : `<span class="ix-delta ${r.d >= 0 ? 'up' : 'down'}"><span class="ix-arr">${r.d >= 0 ? '▲' : '▼'}</span> ${num(Math.abs(Math.round(r.d)))}</span>`}</td>
+          <td>${pct(r.won)}</td><td>${br(r.best)}</td><td>${br(r.worst)}</td></tr>`).join('')}</tbody></table></div></div>`;
+    }
+
     // Location leaderboard
     let boardHtml = '';
     if (multi) {
-      const rows = bizList.map((bz) => {
+      const rows = scope.map((bz) => {
         const c = cur.filter((r) => r.business_id === bz.id), p = prev.filter((r) => r.business_id === bz.id);
         const pr = c.filter((r) => r.route === 'private');
         const ti = ISSUES.map((k) => [k, pr.filter((r) => issuesOf(r).includes(k)).length]).sort((a, z) => z[1] - a[1])[0];
-        return { bz, n: c.length, csat: csat(c), d: c.length && p.length ? csat(c) - csat(p) : null, open: pr.filter((r) => r.status !== 'resolved').length, top: ti && ti[1] ? ti[0] : null };
-      }).filter((r) => (state.type === 'all' || (r.bz.businessType || 'restaurant') === state.type) && r.n);
-      const key = { csat: (r) => r.csat ?? -1, n: (r) => r.n, open: (r) => r.open, d: (r) => r.d ?? -999 }[state.sort] || ((r) => r.csat);
+        return { bz, n: c.length, csat: csat(c), d: c.length && p.length ? csat(c) - csat(p) : null, open: pr.filter((r) => r.status !== 'resolved').length, won: wonBack(pr.filter((r) => r.guest_verdict)), top: ti && ti[1] ? ti[0] : null };
+      }).filter((r) => r.n);
+      const key = { csat: (r) => r.csat ?? -1, n: (r) => r.n, open: (r) => r.open, d: (r) => r.d ?? -999, won: (r) => r.won ?? -1 }[state.sort] || ((r) => r.csat);
       rows.sort((a, z) => key(z) - key(a));
-      boardHtml = `<div class="card"><h3>${tr('ins.c.board')}</h3><p class="muted small">${tr('ins.c.boardSub')}</p>
-        <div class="ix-tablewrap"><table class="ix-table"><thead><tr><th>#</th><th>${tr('ins.t.biz')}</th><th>${tr('a.type')}</th>
-        ${[['n', 'ins.t.n'], ['csat', 'ins.k.csat'], ['d', 'ins.t.change'], ['open', 'ins.k.open']].map(([k, l]) => `<th><button type="button" data-sort="${k}" class="${state.sort === k ? 'on' : ''}">${tr(l)}</button></th>`).join('')}<th>${tr('ins.t.top')}</th></tr></thead>
-        <tbody>${rows.map((r, i) => `<tr><td>${num(i + 1)}</td><td><b>${esc(RC.localName(r.bz, I18N.lang) || r.bz.slug)}</b></td><td>${tr(`a.type.${r.bz.businessType || 'restaurant'}`)}</td><td>${num(r.n)}</td><td><b>${pct(r.csat)}</b></td>
-          <td>${r.d == null ? '–' : Math.round(r.d) === 0 ? '<span class="ix-delta flat">→ 0</span>' : `<span class="ix-delta ${r.d >= 0 ? 'up' : 'down'}"><span class="ix-arr">${r.d >= 0 ? '▲' : '▼'}</span> ${num(Math.abs(Math.round(r.d)))}</span>`}</td><td>${num(r.open)}</td><td>${r.top ? `${ISSUE_ICON[r.top]} ${tr(`a.issue.${r.top}`)}` : '–'}</td></tr>`).join('')}</tbody></table></div></div>`;
+      boardHtml = `<div class="card"><h3>${tr(viewGroup ? 'ins.c.boardBranch' : 'ins.c.board')}</h3><p class="muted small">${tr('ins.c.boardSub')}</p>
+        <div class="ix-tablewrap"><table class="ix-table"><thead><tr><th>#</th><th>${tr(viewGroup ? 'ins.t.branch' : 'ins.t.biz')}</th><th>${tr('a.type')}</th>
+        ${[['n', 'ins.t.n'], ['csat', 'ins.k.csat'], ['d', 'ins.t.change'], ['open', 'ins.k.open'], ['won', 'ins.k.won']].map(([k, l]) => `<th><button type="button" data-sort="${k}" class="${state.sort === k ? 'on' : ''}">${tr(l)}</button></th>`).join('')}<th>${tr('ins.t.top')}</th></tr></thead>
+        <tbody>${rows.map((r, i) => `<tr><td>${num(i + 1)}</td><td><b>${esc(label(r.bz))}</b></td><td>${tr(`a.type.${r.bz.businessType || 'restaurant'}`)}</td><td>${num(r.n)}</td><td><b>${pct(r.csat)}</b></td>
+          <td>${r.d == null ? '–' : Math.round(r.d) === 0 ? '<span class="ix-delta flat">→ 0</span>' : `<span class="ix-delta ${r.d >= 0 ? 'up' : 'down'}"><span class="ix-arr">${r.d >= 0 ? '▲' : '▼'}</span> ${num(Math.abs(Math.round(r.d)))}</span>`}</td><td>${num(r.open)}</td><td>${pct(r.won)}</td><td>${r.top ? `${ISSUE_ICON[r.top]} ${tr(`a.issue.${r.top}`)}` : '–'}</td></tr>`).join('')}</tbody></table></div></div>`;
     }
 
     // Heatmap business × issue
     let heatBizHtml = '';
     if (multi && withIssues.length) {
-      const bs = bizList.filter((bz) => withIssues.some((r) => r.business_id === bz.id));
+      const bs = scope.filter((bz) => withIssues.some((r) => r.business_id === bz.id));
       const m = bs.map((bz) => ISSUES.map((k) => withIssues.filter((r) => r.business_id === bz.id && issuesOf(r).includes(k)).length));
-      heatBizHtml = `<div class="card"><h3>${tr('ins.c.heatBiz')}</h3><p class="muted small">${tr('ins.c.heatBizSub')}</p>
-        ${heat(bs.map((bz) => esc(RC.localName(bz, I18N.lang) || bz.slug)), ISSUES.map((k) => `${ISSUE_ICON[k]}<small>${tr(`a.issue.${k}`)}</small>`), m, (i, j, v) => tr('ins.tip.heatBiz', { b: RC.localName(bs[i], I18N.lang) || bs[i].slug, i: tr(`a.issue.${ISSUES[j]}`), n: num(v) }))}</div>`;
+      heatBizHtml = `<div class="card"><h3>${tr(viewGroup ? 'ins.c.heatBranch' : 'ins.c.heatBiz')}</h3><p class="muted small">${tr('ins.c.heatBizSub')}</p>
+        ${heat(bs.map((bz) => esc(label(bz))), ISSUES.map((k) => `${ISSUE_ICON[k]}<small>${tr(`a.issue.${k}`)}</small>`), m, (i, j, v) => tr('ins.tip.heatBiz', { b: label(bs[i]), i: tr(`a.issue.${ISSUES[j]}`), n: num(v) }))}</div>`;
     }
 
     // When problems happen: day × time band for low ratings
@@ -287,7 +326,7 @@ const RFInsights = (() => {
     root.innerHTML = filters + alertsHtml + kpis + trend
       + `<div class="ix-grid2">${driverHtml}${distHtml}</div>`
       + `<div class="ix-grid2">${segHtml}${themeHtml}</div>`
-      + boardHtml + heatBizHtml + `<div class="ix-grid2">${whenHtml}${langHtml}</div>`
+      + groupsHtml + boardHtml + heatBizHtml + `<div class="ix-grid2">${whenHtml}${langHtml}</div>`
       + `<p class="muted small ix-foot">${tr('ins.foot')}</p>`;
   }
 
@@ -306,12 +345,13 @@ const RFInsights = (() => {
     el.addEventListener('click', (e) => {
       const d = e.target.closest('[data-days]'); if (d) { state.days = +d.dataset.days; render(); return; }
       const s = e.target.closest('[data-sort]'); if (s) { state.sort = s.dataset.sort; draw(); return; }
+      const g = e.target.closest('[data-group]'); if (g) { state.group = g.dataset.group; state.biz = 'all'; draw(); root.scrollIntoView({ behavior: 'smooth' }); return; }
       if (e.target.closest('[data-act="csv"]')) csv();
     });
     el.addEventListener('change', (e) => {
       const f = e.target.dataset.f; if (!f) return;
-      if (f === 'sample') { state.sample = e.target.checked; state.biz = 'all'; state.type = 'all'; render(); return; }
-      state[f] = e.target.value; if (f === 'type') state.biz = 'all'; draw();
+      if (f === 'sample') { state.sample = e.target.checked; state.biz = 'all'; state.type = 'all'; state.group = 'all'; render(); return; }
+      state[f] = e.target.value; if (f === 'type' || f === 'group') state.biz = 'all'; draw();
     });
     el.addEventListener('mousemove', (e) => {
       const t = e.target.closest('[data-tip]');
@@ -332,8 +372,8 @@ const RFInsights = (() => {
   function csv() {
     const { cur } = periods();
     const q = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
-    const head = ['date', 'business', 'type', 'rating', 'route', 'issues', 'status', 'resolved_at', 'language', 'text', 'reply', 'guest_says'];
-    const lines = cur.map((r) => [r.created_at, nameOf(r.business_id), typeOf(r.business_id), r.rating, r.route, issuesOf(r).join('|'), r.status, r.resolved_at || '', r.lang || '', textOf(r), r.reply || '', r.guest_verdict || ''].map(q).join(','));
+    const head = ['date', 'group', 'business', 'type', 'rating', 'route', 'issues', 'status', 'resolved_at', 'language', 'text', 'reply', 'guest_says'];
+    const lines = cur.map((r) => [r.created_at, gName(groupById(groupIdOf(r.business_id))), nameOf(r.business_id), typeOf(r.business_id), r.rating, r.route, issuesOf(r).join('|'), r.status, r.resolved_at || '', r.lang || '', textOf(r), r.reply || '', r.guest_verdict || ''].map(q).join(','));
     const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `review-finder-cx-${new Date().toISOString().slice(0, 10)}.csv` });
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -343,11 +383,15 @@ const RFInsights = (() => {
   function sample() {
     let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const pick = (a) => a[Math.floor(rnd() * a.length)];
+    const groups = [{ id: 'g1', name: 'Al Bahr Seafood', nameAr: 'مطعم البحر' }, { id: 'g2', name: 'Karak House', nameAr: 'بيت الكرك' }];
     const biz = [
-      ['s1', 'Al Bahr Seafood', 'مطعم البحر', 'restaurant', 4.3], ['s2', 'Karak House', 'بيت الكرك', 'restaurant', 4.5],
-      ['s3', 'Tahlia Grill', 'مشويات التحلية', 'restaurant', 3.7], ['s4', 'Corniche Hotel', 'فندق الكورنيش', 'hotel', 4.1],
-      ['s5', 'Glow Salon & Spa', 'صالون جلو', 'salon', 4.4], ['s6', 'Smile Dental Clinic', 'عيادة سمايل', 'clinic', 4.2],
-    ].map(([id, name, nameAr, businessType, q]) => ({ id, slug: id, name, nameAr, businessType, q }));
+      ['s1', 'Al Bahr Seafood', 'مطعم البحر', 'restaurant', 4.3, 'g1', 'Tahlia Street', 'شارع التحلية'],
+      ['s3', 'Al Bahr Seafood', 'مطعم البحر', 'restaurant', 3.7, 'g1', 'Corniche', 'الكورنيش'],
+      ['s7', 'Al Bahr Seafood', 'مطعم البحر', 'restaurant', 4.1, 'g1', 'Obhur', 'أبحر'],
+      ['s2', 'Karak House', 'بيت الكرك', 'restaurant', 4.5, 'g2', 'Al Rawdah', 'الروضة'],
+      ['s8', 'Karak House', 'بيت الكرك', 'restaurant', 4.2, 'g2', 'Al Safa', 'الصفا'],
+      ['s4', 'Corniche Hotel', 'فندق الكورنيش', 'hotel', 4.1], ['s5', 'Glow Salon & Spa', 'صالون جلو', 'salon', 4.4], ['s6', 'Smile Dental Clinic', 'عيادة سمايل', 'clinic', 4.2],
+    ].map(([id, name, nameAr, businessType, q, groupId = '', branchName = '', branchNameAr = '']) => ({ id, slug: id, name, nameAr, businessType, q, groupId, branchName, branchNameAr }));
     const words = {
       good: ['Great food and friendly staff', 'Lovely atmosphere, will come again', 'خدمة ممتازة وأكل لذيذ', 'Fast service, very clean', 'أفضل كرك في جدة'],
       bad: { food: ['Food arrived cold', 'الأكل بارد', 'Burger was overcooked'], service: ['Waited 40 minutes for our order', 'Slow service at dinner', 'الطلب تأخر كثير'],
@@ -375,7 +419,7 @@ const RFInsights = (() => {
           created_at: t.toISOString(), resolved_at: resolved ? new Date(+t + (2 + rnd() * 30) * 36e5).toISOString() : null, lang: /[؀-ۿ]/.test(text) || rnd() < 0.4 ? 'ar' : 'en' });
       }
     });
-    return { biz, reviews };
+    return { biz, groups, reviews };
   }
 
   return {

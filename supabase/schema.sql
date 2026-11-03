@@ -166,3 +166,4 @@ alter table public.businesses add column if not exists booking_url text not null
 -- CX Insights (also in 006_cx_insights.sql): see that file for lang, resolved_at, stamp_resolved_at() and cx_benchmarks().
 
 -- Guest follow-up page, owner replies, "Did we fix it?" (also in 007_follow_up.sql)
+-- Groups with multiple branches, group logins, group analytics (also in 008_groups.sql)
