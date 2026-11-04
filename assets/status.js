@@ -12,6 +12,8 @@
   let data = null;
   let error = '';
   let busy = false;
+  let changing = false;    // guest tapped "Change my answer" and hasn't answered again yet
+  const REFRESH_MS = 15000;
 
   const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.75 5.6 6.15.9-4.45 4.35 1.05 6.15L12 16.9l-5.5 2.9 1.05-6.15L3.1 9.3l6.15-.9z"/></svg>';
   const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
@@ -86,16 +88,32 @@
       }
     }
 
+    const yoursOpen = !!$('body').querySelector('.st-yours')?.open;
     $('body').innerHTML = `${demo ? `<p class="st-demo">${t('s.demo')}</p>` : ''}
       <h1 class="st-title">${t(handled ? 's.titleHandled' : 's.title')}</h1>
       <div class="st-card">${timeline}</div>
       ${reply || verdict ? `<div class="st-card">${reply}${verdict}</div>` : ''}
       ${yours}
-      <p class="st-keep">${t('s.keep')}</p>`;
+      <p class="st-keep">${t('s.live')} ${t('s.keep')}</p>`;
+    $('body').querySelector('.st-yours').open = yoursOpen;
+  }
+
+  // The owner can update this at any time, so keep checking while the guest has the page open.
+  async function refresh() {
+    if (demo || !data || busy || document.hidden) return;
+    try {
+      const fresh = await RC.getTicket(ticket);
+      if (!fresh || busy) return;
+      if (changing) fresh.guest_verdict = '';
+      if (JSON.stringify(fresh) === JSON.stringify(data)) return;
+      data = fresh;
+      applyTheme(data.business);
+      render();
+    } catch { /* offline for a moment: try again on the next check */ }
   }
 
   $('body').addEventListener('click', async (e) => {
-    if (e.target.closest('[data-change]')) { data.guest_verdict = ''; render(); return; }
+    if (e.target.closest('[data-change]')) { changing = true; data.guest_verdict = ''; render(); return; }
     const btn = e.target.closest('[data-v]');
     if (!btn || busy) return;
     const v = btn.dataset.v;
@@ -103,6 +121,7 @@
     try {
       if (!demo) await RC.rateTicket(ticket, v);
       data.guest_verdict = v;
+      changing = false;
     } catch { /* keep the question so they can try again */ }
     busy = false; render();
   });
@@ -125,5 +144,12 @@
       if (!params.get('lang') && !picked && data.lang === 'ar') I18N.set('ar');
     }
     render();
+    if (data && !demo) {
+      setInterval(refresh, REFRESH_MS);
+      // Coming back from WhatsApp or another app: update straight away.
+      document.addEventListener('visibilitychange', refresh);
+      window.addEventListener('focus', refresh);
+      window.addEventListener('pageshow', refresh);
+    }
   })();
 })();
