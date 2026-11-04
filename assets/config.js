@@ -8,5 +8,5 @@ window.RF_CONFIG = {
   SUPABASE_URL: 'https://dmyowzcesfdmvxnryumw.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_nzlgAFUoLj3XLwaUpfMkMQ_TtSe4biT',
   // Address printed QR codes point to (the guest review page lives here).
-  PUBLIC_URL: 'https://eajazali.github.io/review-collector/',
+  PUBLIC_URL: 'https://reviewfinder.hnhmena.com/',
 };
