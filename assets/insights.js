@@ -21,6 +21,7 @@ const RFInsights = (() => {
   let bizList = [];     // businesses in scope (real or sample)
   let groupList = [];   // groups (brands) those businesses belong to
   let viewGroup = null; // the group being shown as a whole, if any
+  let aiNote = { key: '', text: '', busy: false }; // last AI summary, kept for the same filters
   let bench = [];
   let root = null;
 
@@ -345,7 +346,15 @@ const RFInsights = (() => {
     const shoutHtml = shouts.length ? `<div class="card"><h3>${tr('ins.c.shout')}</h3><p class="muted small">${tr('ins.c.shoutSub')}</p>${bars(shouts.map((x) => ({ label: esc(x.name), value: x.n, sub: multi ? ` · ${esc(label(bizList.find((b) => b.id === x.id) || {}))}` : '' })), { tip: (i) => tr('ins.tip.shout', { l: i.label, n: num(i.value) }) })}</div>` : '';
     const recHtml = recAnswered.length ? `<div class="card"><h3>${tr('ins.c.rec')}</h3><p class="muted small">${tr('ins.c.recSub')}</p>${bars(['yes', 'maybe', 'no'].map((k) => ({ label: tr(`a.rec.${k}`), value: recAnswered.filter((r) => r.recommend === k).length })), { fmt: (v) => `${num(v)} · ${pct((100 * v) / recAnswered.length)}` })}</div>` : '';
 
-    root.innerHTML = filters + alertsHtml + kpis + trend
+    // AI summary, only on request: each run uses part of the free daily allowance
+    const aiKey = [state.days, state.group, state.type, state.biz, I18N.lang].join('|');
+    const aiText = aiNote.key === aiKey ? aiNote.text : '';
+    const aiHtml = `<div class="card ix-ai-card"><div class="ix-ai-top"><div><h3>✨ ${tr('ins.ai.t')}</h3><p class="muted small">${tr('ins.ai.x')}</p></div>
+      <button type="button" class="btn" data-act="ai" ${aiNote.busy || state.sample ? 'disabled' : ''}>${tr(aiNote.busy ? 'ins.ai.busy' : aiText ? 'ins.ai.again' : 'ins.ai.go')}</button></div>
+      ${state.sample ? `<p class="ix-empty">${tr('ins.ai.sample')}</p>` : ''}
+      ${aiText ? `<div class="ix-ai-text" dir="auto">${esc(aiText)}</div><p class="muted small ix-ai-note">${tr('ins.ai.note')}</p>` : ''}</div>`;
+
+    root.innerHTML = filters + alertsHtml + aiHtml + kpis + trend
       + `<div class="ix-grid2">${driverHtml}${distHtml}</div>`
       + `<div class="ix-grid2">${segHtml}${themeHtml}</div>`
       + groupsHtml + boardHtml + heatBizHtml + `<div class="ix-grid2">${recHtml}${shoutHtml}</div>` + `<div class="ix-grid2">${whenHtml}${langHtml}</div>`
@@ -369,6 +378,7 @@ const RFInsights = (() => {
       const s = e.target.closest('[data-sort]'); if (s) { state.sort = s.dataset.sort; draw(); return; }
       const g = e.target.closest('[data-group]'); if (g) { state.group = g.dataset.group; state.biz = 'all'; draw(); root.scrollIntoView({ behavior: 'smooth' }); return; }
       if (e.target.closest('[data-act="csv"]')) csv();
+      if (e.target.closest('[data-act="ai"]')) aiSummary();
     });
     el.addEventListener('change', (e) => {
       const f = e.target.dataset.f; if (!f) return;
@@ -390,6 +400,18 @@ const RFInsights = (() => {
     });
     el.addEventListener('mouseleave', () => { hideTip(); el.querySelectorAll('.ix-cross').forEach((c) => (c.style.display = 'none')); });
   }
+
+  async function aiSummary() {
+    if (aiNote.busy) return;
+    const key = [state.days, state.group, state.type, state.biz, I18N.lang].join('|');
+    aiNote = { key: '', text: '', busy: true }; draw();
+    const ids = (state.biz === 'all' ? inScope() : bizList.filter((b) => b.id === state.biz)).map((b) => b.id);
+    const res = await RC.aiAssist({ action: 'summary', business_ids: ids, days: state.days, lang: I18N.lang });
+    aiNote = { key: res?.text ? key : '', text: res?.text || '', busy: false };
+    if (!res?.text) showAiError(res?.error);
+    draw();
+  }
+  const showAiError = (code) => ctx.toast?.(tr(`ai.err.${code || 'engine'}`));
 
   function csv() {
     const { cur } = periods();

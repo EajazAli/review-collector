@@ -494,3 +494,9 @@ select[name="businessType"]:disabled { opacity: .65; cursor: not-allowed; }
 .tag.shout { background: #E7F6EC; color: #0B6B2E; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag.late { background: #3B1C1A; color: #F97066; } :root:not([data-theme="light"]) .tag.shout { background: #15301F; color: #6CE9A6; } }
 @media (max-width: 520px) { .fb-case { grid-template-columns: 1fr; } }
+
+/* AI summary */
+.ix-ai-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ix-ai-top .small { margin: 0 !important; }
+.ix-ai-text { margin-top: 14px; white-space: pre-wrap; line-height: 1.6; font-size: 14.5px; }
+.ix-ai-note { margin: 10px 0 0 !important; }

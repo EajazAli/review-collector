@@ -105,3 +105,17 @@ I18N.add({
     'ins.c.shout': 'شكر الموظفين', 'ins.c.shoutSub': 'من شكرهم الضيوف الراضون بالاسم', 'ins.tip.shout': '{l}: شُكر {n} مرات',
   },
 });
+
+/* AI summary */
+I18N.add({
+  en: {
+    'ins.ai.t': 'AI summary', 'ins.ai.x': 'What guests like, what to fix first and what to do next, for the filters above.',
+    'ins.ai.go': 'Summarise', 'ins.ai.again': 'Run again', 'ins.ai.busy': 'Reading reviews…', 'ins.ai.sample': 'Turn off Sample data to summarise your real reviews.',
+    'ins.ai.note': 'Written by AI from your reviews. Check it before acting on it.',
+  },
+  ar: {
+    'ins.ai.t': 'ملخص بالذكاء الاصطناعي', 'ins.ai.x': 'ما يعجب العملاء، وما يجب إصلاحه أولاً، والخطوات التالية، حسب الفلاتر أعلاه.',
+    'ins.ai.go': 'لخّص', 'ins.ai.again': 'أعد التلخيص', 'ins.ai.busy': 'جارٍ قراءة التقييمات…', 'ins.ai.sample': 'أوقف البيانات التجريبية لتلخيص تقييماتك الحقيقية.',
+    'ins.ai.note': 'كتبه الذكاء الاصطناعي من تقييماتك. راجعه قبل اتخاذ أي إجراء.',
+  },
+});

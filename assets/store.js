@@ -311,6 +311,14 @@ const RC = (() => {
     return data;
   }
 
+  // AI summaries and suggested replies (supabase/functions/ai-assist). Returns { text } or { error }.
+  async function aiAssist(payload) {
+    try {
+      const { data, error } = await sb.functions.invoke('ai-assist', { body: payload });
+      return error ? { error: 'off' } : data;
+    } catch { return { error: 'off' }; }
+  }
+
   // Anonymous averages per business type (needs supabase/006_cx_insights.sql; empty if not run yet).
   async function cxBenchmarks(since) {
     const { data, error } = await sb.rpc('cx_benchmarks', { since });
@@ -433,7 +441,7 @@ const RC = (() => {
     configured, sb, BUSINESS_TYPES, ISSUE_KEYS, ISSUE_ICON, issuesFor, usesBooking, BOOKING_TRIPS_URL, BOOKING_EXTRANET_URL, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
-    listMembers, setMembers, submitReview, listReviews, cxBenchmarks, getTicket, rateTicket, updateReview, photoUrls,
+    listMembers, setMembers, submitReview, listReviews, cxBenchmarks, aiAssist, getTicket, rateTicket, updateReview, photoUrls,
     listGroups, createGroup, listGroupMembers, setGroupMembers,
     localName, groupName, branchName, displayName, localTagline, googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, statusUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
   };

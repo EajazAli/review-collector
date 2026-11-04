@@ -379,3 +379,19 @@ I18N.add({
     'a.rec.yes': 'ينصح بنا', 'a.rec.maybe': 'قد ينصح بنا', 'a.rec.no': 'لا ينصح بنا',
   },
 });
+
+/* AI assistance */
+I18N.add({
+  en: {
+    'a.ai.suggest': 'Suggest a reply', 'a.ai.check': 'Draft added. Check and edit it before saving.',
+    'ai.err.off': "AI isn't switched on yet.", 'ai.err.limit': "Today's free AI allowance is used up. Try again tomorrow.",
+    'ai.err.clinic': 'AI is off for clinics until the patient privacy check is done.', 'ai.err.few': 'Not enough ratings in this view yet.',
+    'ai.err.auth': 'Please sign in again.', 'ai.err.notfound': "This review couldn't be found.", 'ai.err.engine': "AI couldn't respond. Try again in a moment.",
+  },
+  ar: {
+    'a.ai.suggest': 'اقترح رداً', 'a.ai.check': 'تمت إضافة المسودة. راجعها وعدّلها قبل الحفظ.',
+    'ai.err.off': 'الذكاء الاصطناعي غير مفعّل بعد.', 'ai.err.limit': 'انتهى الحد المجاني لليوم. حاول مجدداً غداً.',
+    'ai.err.clinic': 'الذكاء الاصطناعي متوقف للعيادات حتى اكتمال مراجعة خصوصية المرضى.', 'ai.err.few': 'لا توجد تقييمات كافية في هذا العرض بعد.',
+    'ai.err.auth': 'يرجى تسجيل الدخول مجدداً.', 'ai.err.notfound': 'تعذّر العثور على هذا التقييم.', 'ai.err.engine': 'تعذّر الحصول على رد. حاول بعد قليل.',
+  },
+});

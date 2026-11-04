@@ -29,7 +29,7 @@
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.view === v));
     document.querySelectorAll('.view').forEach((s) => (s.hidden = s.id !== `view-${v}`));
     if (v === 'inbox') loadReviews();
-    if (v === 'insights') RFInsights.mount($('insights'), { user, list, groups });
+    if (v === 'insights') RFInsights.mount($('insights'), { user, list, groups, toast });
     if (v === 'settings') { $('publicUrl').value = RC.settings().publicUrl; $('pwEmail').textContent = user.email; }
     history.replaceState(null, '', `#${v}`);
   }
@@ -468,6 +468,7 @@
           <label class="fb-rl" for="rp-${r.id}">${tr('a.fu.label')}${r.replied_at ? ` <small>· ${tr('a.fu.saved', { when: I18N.fmtDate(r.replied_at) })}</small>` : ''}</label>
           <textarea id="rp-${r.id}" data-reply="${r.id}" rows="2" maxlength="2000" dir="auto" placeholder="${RC.esc(tr('a.fu.ph'))}">${RC.esc(r.reply || '')}</textarea>
           <div class="fb-ra">
+            <button class="btn" data-suggest="${r.id}">✨ ${tr('a.ai.suggest')}</button>
             <button class="btn primary" data-save="${r.id}">${tr('a.fu.save')}</button>
             ${r.guest_phone ? `<button class="btn" data-sendwa="${r.id}">${tr('a.fu.saveWa')}</button>` : ''}
             <a class="link small" target="_blank" rel="noopener" href="${RC.esc(RC.statusUrl(r.ticket))}">${tr('a.fu.page')}</a>
@@ -510,6 +511,16 @@
     ar: (v) => `مرحباً${v.name ? ` ${v.name}` : ''}، معك ${v.biz}.\n\n${v.reply}\n\nيمكنك رؤية الرد وإخبارنا إن تم حل المشكلة من هنا:\n${v.link}`,
   };
   $('feed').addEventListener('click', async (e) => {
+    // AI drafts a reply into the box. Nothing is saved or sent until the owner does it.
+    const sug = e.target.dataset?.suggest;
+    if (sug) {
+      e.target.disabled = true;
+      const res = await RC.aiAssist({ action: 'reply', review_id: sug });
+      e.target.disabled = false;
+      if (res?.text) { $(`rp-${sug}`).value = res.text; $(`rp-${sug}`).focus(); toast(tr('a.ai.check')); }
+      else toast(tr(`ai.err.${res?.error || 'engine'}`));
+      return;
+    }
     const saveId = e.target.dataset?.save || e.target.dataset?.sendwa;
     if (saveId) {
       const r = reviews.find((x) => x.id === saveId);
