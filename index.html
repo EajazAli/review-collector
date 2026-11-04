@@ -48,11 +48,11 @@
     .nav.scrolled { border-bottom-color: var(--line); }
     .nav .wrap { display: flex; align-items: center; gap: 28px; height: 72px; }
     .nav .logo { height: 34px; width: auto; }
-    .nav-links { display: flex; gap: 26px; margin-left: auto; }
+    .nav-links { display: flex; gap: 20px; margin-left: auto; white-space: nowrap; }
     .nav-links a { color: var(--body); text-decoration: none; font-weight: 500; font-size: 15px; }
     .nav-links a:hover { color: #fff; }
     .nav-cta { display: flex; gap: 10px; }
-    @media (max-width: 880px) { .nav-links { display: none; } .nav-cta { margin-left: auto; } }
+    @media (max-width: 1120px) { .nav-links { display: none; } .nav-cta { margin-left: auto; } }
     @media (max-width: 420px) { .nav .logo { height: 28px; } .nav-cta .btn-primary { display: none; } }
 
     /* ---------- Hero ---------- */
@@ -284,6 +284,55 @@
     .amount, .s-dots { direction: ltr; }
     html[dir="rtl"] .amount { direction: rtl; }
 
+    /* CX + Branch Intelligence: dashboard previews */
+    .dash { background: var(--panel); border: 1px solid var(--line-2); border-radius: 24px; padding: 20px; display: grid; gap: 12px; min-width: 0; box-shadow: 0 40px 100px -40px rgba(76,92,240,.5); }
+    .dash-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; }
+    .dash-tag { flex: none; font-size: 12px; font-weight: 700; color: #C9CEFF; padding: 4px 10px; border-radius: 99px; border: 1px dashed rgba(107,120,245,.6); }
+    .dash-alert { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; padding: 10px 14px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--line); border-inline-start: 4px solid #fab219; font-size: 14px; color: #DADBEA; }
+    .dash-alert > span:first-child { color: #fab219; }
+    .dash-alert b { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #fff; }
+    .dash-alert.down { border-inline-start-color: #ec835a; }
+    .dash-alert.down > span:first-child { color: #ec835a; }
+    .dash-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .dash-tiles > div { background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 2px; min-width: 0; }
+    .dash-tiles > div > span { font-size: 12.5px; font-weight: 700; color: var(--body); }
+    .dash-tiles b { font-size: clamp(24px, 3vw, 32px); font-weight: 700; line-height: 1.15; }
+    .dash-tiles small { font-size: 12px; color: var(--body); }
+    .dash i.up { color: #3DD68C; font-style: normal; }
+    .dash i.down { color: #ff7b72; font-style: normal; }
+    .dash-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .dash-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px; min-width: 0; }
+    .dash-card h3 { margin: 0 0 12px; font-size: 14px; font-weight: 600; }
+    .dash-line { display: block; width: 100%; height: auto; direction: ltr; }
+    .dash-line line { stroke: rgba(255,255,255,.08); stroke-width: 1; }
+    .dash-line path { fill: none; stroke: #5598e7; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .dash-line circle { fill: #5598e7; stroke: var(--panel-2); stroke-width: 2; }
+    .dash-bars { display: grid; gap: 10px; }
+    .dash-bars > div { display: grid; grid-template-columns: minmax(84px, 40%) 1fr auto; align-items: center; gap: 8px; font-size: 12.5px; }
+    .dash-bars i { display: block; height: 8px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; }
+    .dash-bars u { display: block; height: 100%; border-radius: 4px; background: #5598e7; }
+    .dash-bars b { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .dash-heat { display: grid; grid-template-columns: minmax(58px, max-content) repeat(var(--cols), minmax(0, 1fr)); gap: 3px; font-size: 12px; align-items: center; }
+    .dash-heat em { font-style: normal; color: var(--body); font-weight: 600; font-size: 11.5px; line-height: 1.2; text-align: center; }
+    .dash-heat em:nth-child(4n + 1) { text-align: start; padding-inline-end: 6px; }
+    .dash-heat i { height: 30px; border-radius: 6px; display: grid; place-items: center; font-style: normal; font-weight: 700; color: #fff; background: rgba(255,255,255,.05); }
+    .dash-heat .h1 { background: #0d366b; } .dash-heat .h2 { background: #104281; } .dash-heat .h3 { background: #1c5cab; }
+    .dash-heat .h4 { background: #2a78d6; } .dash-heat .h5 { background: #5598e7; color: #000212; }
+    .dash-scroll { overflow-x: auto; }
+    .dash-table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+    .dash-table th, .dash-table td { padding: 8px 8px; text-align: start; white-space: nowrap; border-bottom: 1px solid var(--line); }
+    .dash-table th { font-size: 12px; color: var(--body); font-weight: 700; }
+    .dash-table tr:last-child td { border-bottom: 0; }
+    .cx-feats { grid-template-columns: repeat(3, 1fr); margin-top: 14px; }
+    .cx-feats a { color: #C9CEFF; font-weight: 600; white-space: nowrap; }
+    .branch { display: grid; grid-template-columns: .85fr 1.15fr; gap: 48px; align-items: center; }
+    .branch-copy > p { color: var(--body); font-size: 18px; margin: 0 0 22px; }
+    .branch-copy ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .branch-copy li { display: flex; gap: 10px; align-items: flex-start; color: #DADBEA; font-size: 15px; }
+    .branch-copy li svg { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--ok); }
+    @media (max-width: 1040px) { .cx-feats { grid-template-columns: repeat(2, 1fr); } .dash-grid { grid-template-columns: 1fr; } .branch { grid-template-columns: 1fr; gap: 32px; } }
+    @media (max-width: 560px) { .cx-feats { grid-template-columns: 1fr; } .dash { padding: 14px; } .dash-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
     /* Reveal */
     .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1); }
     .reveal.in { opacity: 1; transform: none; }
@@ -310,6 +359,8 @@
       <a href="#top" aria-label="Review Finder home"><img class="logo" src="assets/brand/HH_Logo_Primary_Reverse_White.png" alt="H&amp;H Technology" /></a>
       <nav class="nav-links" aria-label="Sections">
         <a href="#how"><span data-i18n-html="lp.1">How it works</span></a>
+        <a href="#cx"><span data-i18n-html="lp.cx.nav">CX Intelligence</span></a>
+        <a href="#branches"><span data-i18n-html="lp.br.nav">Branches</span></a>
         <a href="#features"><span data-i18n-html="lp.2">Features</span></a>
         <a href="#rules"><span data-i18n-html="lp.3">Google rules</span></a>
         <a href="#pricing"><span data-i18n-html="lp.4">Pricing</span></a>
@@ -339,6 +390,7 @@
             <span><svg><use href="#i-check"/></svg><span data-i18n-html="lp.13">No app for guests</span></span>
             <span><svg><use href="#i-check"/></svg><span data-i18n-html="lp.14">Unlimited tables</span></span>
             <span><svg><use href="#i-check"/></svg><span data-i18n-html="lp.15">Set up in a day</span></span>
+            <span><svg><use href="#i-check"/></svg><span data-i18n-html="lp.cx.note">CX and branch analytics</span></span>
           </div>
         </div>
 
@@ -462,6 +514,109 @@
       </div>
     </section>
 
+    <!-- CX INTELLIGENCE -->
+    <section class="sec" id="cx" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="kicker"><span data-i18n-html="lp.cx.k">CX Intelligence</span></span>
+          <h2><span data-i18n-html="lp.cx.h">Stop guessing.<br />Know <em>what to fix</em>.</span></h2>
+          <p><span data-i18n-html="lp.cx.p">Every rating becomes customer experience data: how happy guests are, what goes wrong, when it happens, and whether you won them back.</span></p>
+        </div>
+
+        <div class="dash reveal">
+          <div class="dash-top"><b><span data-i18n-html="lp.cx.dash">CX Insights</span></b><span class="dash-tag"><span data-i18n-html="lp.cx.sample">Sample data</span></span></div>
+          <div class="dash-alert warn"><span aria-hidden="true">⚠</span><b><span data-i18n-html="lp.cx.watch">Watch</span></b><span data-i18n-html="lp.cx.alert">"Slow service" is the top complaint this month (14 times).</span></div>
+          <div class="dash-tiles">
+            <div><span data-i18n-html="lp.cx.t1">CSAT</span><b>84%</b><small><i class="up" aria-hidden="true">▲</i> <span data-i18n-html="lp.cx.t1d">+6 pts vs last month</span></small></div>
+            <div><span data-i18n-html="lp.cx.t2">Average rating</span><b>4.4★</b><small><i class="up" aria-hidden="true">▲</i> <span data-i18n-html="lp.cx.t2d">+0.3 vs last month</span></small></div>
+            <div><span data-i18n-html="lp.cx.t3">Replied to</span><b>92%</b><small><span data-i18n-html="lp.cx.t3d">of private reviews</span></small></div>
+            <div><span data-i18n-html="lp.cx.t4">Won back</span><b>71%</b><small><span data-i18n-html="lp.cx.t4d">said "fixed"</span></small></div>
+          </div>
+          <div class="dash-grid">
+            <div class="dash-card">
+              <h3><span data-i18n-html="lp.cx.c1">CSAT over time</span></h3>
+              <svg class="dash-line" viewBox="0 0 300 120" role="img" aria-label="CSAT rising from 72% to 84%">
+                <line x1="0" x2="300" y1="20" y2="20"/><line x1="0" x2="300" y1="60" y2="60"/><line x1="0" x2="300" y1="100" y2="100"/>
+                <path d="M4 82 L52 74 L100 78 L148 60 L196 52 L244 44 L292 30"/><circle cx="292" cy="30" r="4.5"/>
+              </svg>
+            </div>
+            <div class="dash-card">
+              <h3><span data-i18n-html="lp.cx.c2">What guests complain about</span></h3>
+              <div class="dash-bars">
+                <div><span data-i18n-html="lp.cx.i1">Slow service</span><i><u style="width:44%"></u></i><b>44%</b></div>
+                <div><span data-i18n-html="lp.cx.i2">Food quality</span><i><u style="width:29%"></u></i><b>29%</b></div>
+                <div><span data-i18n-html="lp.cx.i3">Staff attitude</span><i><u style="width:15%"></u></i><b>15%</b></div>
+                <div><span data-i18n-html="lp.cx.i4">Cleanliness</span><i><u style="width:12%"></u></i><b>12%</b></div>
+              </div>
+            </div>
+            <div class="dash-card">
+              <h3><span data-i18n-html="lp.cx.c3">When problems happen</span></h3>
+              <div class="dash-heat" style="--cols:3">
+                <span></span><em><span data-i18n-html="lp.cx.b1">Lunch</span></em><em><span data-i18n-html="lp.cx.b2">Dinner</span></em><em><span data-i18n-html="lp.cx.b3">Late</span></em>
+                <em><span data-i18n-html="lp.cx.d1">Wed</span></em><i class="h1">1</i><i class="h2">3</i><i class="h1">1</i>
+                <em><span data-i18n-html="lp.cx.d2">Thu</span></em><i class="h2">2</i><i class="h5">9</i><i class="h3">4</i>
+                <em><span data-i18n-html="lp.cx.d3">Fri</span></em><i class="h1">1</i><i class="h4">7</i><i class="h2">3</i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="features cx-feats">
+          <article class="feat reveal"><h3><span data-i18n-html="lp.cx.f1">Scores that show direction</span></h3><p><span data-i18n-html="lp.cx.f1p">CSAT, average rating, Google share, open issues and time to resolve, each compared with the previous period.</span></p></article>
+          <article class="feat reveal"><h3><span data-i18n-html="lp.cx.f2">Root causes, not just stars</span></h3><p><span data-i18n-html="lp.cx.f2p">See which issues come up most, how low they drag the rating, and the words unhappy guests use, in Arabic and English.</span></p></article>
+          <article class="feat reveal"><h3><span data-i18n-html="lp.cx.f3">Alerts before it spreads</span></h3><p><span data-i18n-html="lp.cx.f3p">Get flagged when CSAT drops or a complaint has waited more than 48 hours for a reply.</span></p></article>
+          <article class="feat reveal"><h3><span data-i18n-html="lp.cx.f4">Win guests back</span></h3><p><span data-i18n-html="lp.cx.f4p">Your reply reaches the guest on a private follow-up page, and they tell you if it was fixed. <a href="status.html?demo=1" target="_blank" rel="noopener">See the guest view</a></span></p></article>
+          <article class="feat reveal"><h3><span data-i18n-html="lp.cx.f5">Compare with your market</span></h3><p><span data-i18n-html="lp.cx.f5p">See your CSAT against the anonymous average for businesses like yours, once there are enough of them on Review Finder.</span></p></article>
+          <article class="feat reveal"><h3><span data-i18n-html="lp.cx.f6">Your data, ready to share</span></h3><p><span data-i18n-html="lp.cx.f6p">Filter by 7 days to 12 months and export everything to CSV for your team.</span></p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- BRANCH INTELLIGENCE -->
+    <section class="sec" id="branches" style="padding-top:0">
+      <div class="wrap">
+        <div class="branch">
+          <div class="branch-copy reveal">
+            <span class="kicker"><span data-i18n-html="lp.br.k">Branch Intelligence</span></span>
+            <h2><span data-i18n-html="lp.br.h">One brand. Every branch.<br /><em>One view</em>.</span></h2>
+            <p><span data-i18n-html="lp.br.p">Running more than one location? See the whole group at a glance, then open any branch to find out why it's ahead or behind.</span></p>
+            <ul>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.br.l1">Group totals across all branches, with drill-down to each one</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.br.l2">Branch leaderboard by CSAT, change, open issues and guests won back</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.br.l3">See which problem belongs to which branch</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.br.l4">Alerts name the branch that's slipping</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.br.l5">One group login for the owner, separate logins for branch managers</span></li>
+              <li><svg><use href="#i-check"/></svg><span data-i18n-html="lp.br.l6">Each branch keeps its own QR codes, reviews and WhatsApp numbers</span></li>
+            </ul>
+          </div>
+          <div class="dash reveal">
+            <div class="dash-top"><b><span data-i18n-html="lp.br.dash">Your restaurant group · 3 branches</span></b><span class="dash-tag"><span data-i18n-html="lp.cx.sample">Sample data</span></span></div>
+            <div class="dash-alert down"><span aria-hidden="true">▼</span><b><span data-i18n-html="lp.br.drop">Dropping</span></b><span data-i18n-html="lp.br.alert">Corniche: CSAT fell from 72% to 58%.</span></div>
+            <div class="dash-card">
+              <h3><span data-i18n-html="lp.br.c1">Branch leaderboard</span></h3>
+              <div class="dash-scroll"><table class="dash-table">
+                <thead><tr><th><span data-i18n-html="lp.br.th1">Branch</span></th><th><span data-i18n-html="lp.cx.t1">CSAT</span></th><th><span data-i18n-html="lp.br.th2">Change</span></th><th><span data-i18n-html="lp.br.th3">Open</span></th><th><span data-i18n-html="lp.cx.t4">Won back</span></th></tr></thead>
+                <tbody>
+                  <tr><td><b><span data-i18n-html="lp.br.n1">Tahlia Street</span></b></td><td><b>88%</b></td><td><i class="up" aria-hidden="true">▲</i> 4</td><td>1</td><td>78%</td></tr>
+                  <tr><td><b><span data-i18n-html="lp.br.n2">Obhur</span></b></td><td><b>81%</b></td><td><i class="up" aria-hidden="true">▲</i> 2</td><td>2</td><td>70%</td></tr>
+                  <tr><td><b><span data-i18n-html="lp.br.n3">Corniche</span></b></td><td><b>58%</b></td><td><i class="down" aria-hidden="true">▼</i> 14</td><td>7</td><td>52%</td></tr>
+                </tbody>
+              </table></div>
+            </div>
+            <div class="dash-card">
+              <h3><span data-i18n-html="lp.br.c2">Problems by branch</span></h3>
+              <div class="dash-heat" style="--cols:3">
+                <span></span><em><span data-i18n-html="lp.cx.i2">Food quality</span></em><em><span data-i18n-html="lp.cx.i1">Slow service</span></em><em><span data-i18n-html="lp.cx.i4">Cleanliness</span></em>
+                <em><span data-i18n-html="lp.br.n1">Tahlia Street</span></em><i class="h1">1</i><i class="h1">2</i><i class="h0"></i>
+                <em><span data-i18n-html="lp.br.n2">Obhur</span></em><i class="h2">3</i><i class="h1">1</i><i class="h1">1</i>
+                <em><span data-i18n-html="lp.br.n3">Corniche</span></em><i class="h2">4</i><i class="h5">11</i><i class="h3">5</i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- FEATURES -->
     <section class="sec" id="features" style="padding-top:0">
       <div class="wrap">
@@ -532,6 +687,7 @@
               <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.100">Google review routing</span><small><span data-i18n-html="lp.101">With your own rating threshold</span> <span data-i18n-html="lp.bk.incl">· plus Booking.com for hotels</span></small></span></li>
               <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.102">WhatsApp alerts to 2 numbers</span><small><span data-i18n-html="lp.103">For the owner and a manager</span></small></span></li>
               <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.104">Owner dashboard and review inbox</span><small><span data-i18n-html="lp.105">Photos, averages and issue tracking</span></small></span></li>
+              <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.cx.incl">CX Insights and branch analytics</span><small><span data-i18n-html="lp.cx.inclS">Scores, issue drivers, alerts and group views</span></small></span></li>
               <li><svg><use href="#i-check"/></svg><span><span data-i18n-html="lp.106">Setup by H&amp;H Technology</span><small><span data-i18n-html="lp.107">We configure your page and QR codes</span></small></span></li>
             </ul>
           </div>
@@ -576,6 +732,18 @@
             <p><span data-i18n-html="lp.bk.a">Yes, in two ways. After rating, hotel guests who booked on Booking.com are shown how to leave their review there too (Booking.com only accepts reviews from guests who booked and stayed, within 3 months of check-out). And your dashboard has a one-tap link to reply to Booking.com reviews in the Booking.com Extranet.</span></p>
           </details>
           <details>
+            <summary><span data-i18n-html="lp.cx.q1"></span></summary>
+            <p><span data-i18n-html="lp.cx.a1"></span></p>
+          </details>
+          <details>
+            <summary><span data-i18n-html="lp.cx.q2"></span></summary>
+            <p><span data-i18n-html="lp.cx.a2"></span></p>
+          </details>
+          <details>
+            <summary><span data-i18n-html="lp.cx.q3"></span></summary>
+            <p><span data-i18n-html="lp.cx.a3"></span></p>
+          </details>
+          <details>
             <summary><span data-i18n-html="lp.121">How do I get started?</span></summary>
             <p><span data-i18n-html="lp.122">Message us on WhatsApp. We'll set up your review page, connect your Google review link and WhatsApp numbers, and send you your QR codes and dashboard login.</span></p>
           </details>
@@ -607,6 +775,8 @@
           <h4><span data-i18n-html="lp.127">Product</span></h4>
           <ul>
             <li><a href="#how"><span data-i18n-html="lp.1">How it works</span></a></li>
+            <li><a href="#cx"><span data-i18n-html="lp.cx.nav">CX Intelligence</span></a></li>
+            <li><a href="#branches"><span data-i18n-html="lp.br.nav">Branches</span></a></li>
             <li><a href="#features"><span data-i18n-html="lp.2">Features</span></a></li>
             <li><a href="#pricing"><span data-i18n-html="lp.4">Pricing</span></a></li>
             <li><a href="login.html"><span data-i18n-html="lp.6">Login</span></a></li>
