@@ -181,7 +181,7 @@ textarea:focus, input:focus { border-color: var(--ink); background: color-mix(in
 .cta:not(:disabled):active { transform: scale(.98); }
 .cta.solid, .cta.google { background: var(--ink); color: var(--to); }
 .cta .g { width: 22px; height: 22px; background: #fff; border-radius: 50%; padding: 3px; }
-.cta.wa { margin-top: 10px; max-width: 320px; }
+.cta.wa { margin-top: 10px; max-width: 320px; color: var(--ink); }
 .cta.wa svg { width: 22px; height: 22px; fill: #25D366; }
 .cta.busy { pointer-events: none; opacity: .7; }
 
@@ -324,5 +324,6 @@ html[lang="ar"] .skip { text-transform: none; font-size: 13px; }
 .bk-btn.solid { background: #1b1b1f; border-color: #1b1b1f; color: #fff; }
 .bk-card .bk-note { font-size: 12px; color: #75758a; }
 html[lang="ar"] .bk-title { font-family: 'Noto Kufi Arabic', 'Noto Sans Arabic', sans-serif; }
-.cta.track { margin-top: 10px; max-width: 320px; background: transparent; border: 1.5px solid var(--ink); color: var(--ink); }
+.cta.track { margin-top: 10px; max-width: 320px; }
+.track-hint { font-size: 14px !important; margin-top: -2px !important; }
 .cta.track svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }

@@ -276,6 +276,7 @@
     const track = res.ticket ? RC.statusUrl(res.ticket) : '';
     $('track').href = track || '#';
     $('track').hidden = !track;
+    $('trackHint').hidden = !track;
 
     // Alert the owner on WhatsApp (text only; photos are in their dashboard).
     const owner = (biz.whatsapp || []).find(Boolean);
@@ -296,7 +297,8 @@
       $('waRetry').href = url;
       $('waRetry').hidden = false;
       showDone('private');
-      location.href = url; // opens WhatsApp on phones
+      // Saved with a follow-up page: WhatsApp is the guest's choice. Otherwise it's the only way to reach the owner.
+      if (!track) location.href = url; // opens WhatsApp on phones
       return;
     }
     showDone('private');
@@ -370,7 +372,7 @@
   }
 
   function reset() {
-    photos = []; renderThumbs(); picked.clear(); renderChips(); $('waRetry').hidden = true; $('track').hidden = true;
+    photos = []; renderThumbs(); picked.clear(); renderChips(); $('waRetry').hidden = true; $('track').hidden = true; $('trackHint').hidden = true;
     $('text').value = ''; $('guestName').value = ''; $('guestPhone').value = '';
     setRating(0, false);
     doneKind = null;
