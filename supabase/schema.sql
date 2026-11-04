@@ -167,3 +167,4 @@ alter table public.businesses add column if not exists booking_url text not null
 
 -- Guest follow-up page, owner replies, "Did we fix it?" (also in 007_follow_up.sql)
 -- Groups with multiple branches, group logins, group analytics (also in 008_groups.sql)
+-- Industry issues, recommend question, staff shout-outs, complaint deadlines (also in 009_cases_recommend_shoutouts.sql)

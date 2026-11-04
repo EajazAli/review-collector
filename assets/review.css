@@ -327,3 +327,7 @@ html[lang="ar"] .bk-title { font-family: 'Noto Kufi Arabic', 'Noto Sans Arabic',
 .cta.track { margin-top: 10px; max-width: 320px; }
 .track-hint { font-size: 14px !important; margin-top: -2px !important; }
 .cta.track svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Optional one-tap questions */
+.ask { display: grid; gap: 6px; }
+.ask input { width: 100%; }

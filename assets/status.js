@@ -53,7 +53,7 @@
     const handled = data.status === 'resolved' || !!data.reply;
     const steps = [
       { key: 'received', done: true, at: data.created_at },
-      { key: 'handling', done: handled, at: data.replied_at || (data.status === 'resolved' ? data.resolved_at : null) },
+      { key: 'handling', done: handled || !!data.assigned_at, at: data.assigned_at || data.replied_at || (data.status === 'resolved' ? data.resolved_at : null) },
       { key: 'resolved', done: data.status === 'resolved', at: data.resolved_at },
     ];
     const current = steps.findIndex((s) => !s.done);

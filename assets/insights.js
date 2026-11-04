@@ -12,7 +12,7 @@ const RFInsights = (() => {
   const DAY = 864e5;
   const LW = 520;      // line chart viewBox width
   const ISSUES = RC.ISSUE_KEYS;
-  const ISSUE_ICON = { food: '🍽️', service: '⏱️', staff: '🙋', clean: '🧹', value: '💸' };
+  const ISSUE_ICON = RC.ISSUE_ICON;
   const TYPES = RC.BUSINESS_TYPES;
 
   let ctx = null;       // { user, list, groups }
@@ -181,6 +181,11 @@ const RFInsights = (() => {
     const replied = (rows) => share(rows, (r) => !!r.reply);
     const answered = priv.filter((r) => r.guest_verdict), answeredPrev = privPrev.filter((r) => r.guest_verdict);
     const wonBack = (rows) => share(rows, (r) => r.guest_verdict === 'fixed');
+    // Would recommend, and complaints handled by their deadline
+    const recAnswered = cur.filter((r) => r.recommend), recPrev = prev.filter((r) => r.recommend);
+    const recYes = (rows) => share(rows, (r) => r.recommend === 'yes');
+    const onTime = (rows) => share(rows.filter((r) => r.status === 'resolved' && r.resolved_at && r.due_at), (r) => new Date(r.resolved_at) <= new Date(r.due_at));
+    const late = (r) => r.route === 'private' && r.status !== 'resolved' && Date.now() > (r.due_at ? +new Date(r.due_at) : +new Date(r.created_at) + 48 * 36e5);
     const typesPresent = TYPES.filter((t) => bizList.some((b) => (b.businessType || 'restaurant') === t));
 
     const filters = `<div class="ix-filters">
@@ -211,13 +216,18 @@ const RFInsights = (() => {
       ${tile(tr('ins.k.resolve'), rh == null ? '–' : `${num(+rh.toFixed(rh < 10 ? 1 : 0))}${tr('ins.h')}`, delta(rh, rhPrev, { unit: 'h', invert: true, digits: 1 }), tr('ins.k.resolveHint'))}
       ${tile(tr('ins.k.replied'), pct(replied(priv)), delta(replied(priv), replied(privPrev)), tr('ins.k.repliedHint'))}
       ${tile(tr('ins.k.won'), pct(wonBack(answered)), delta(wonBack(answered), wonBack(answeredPrev)), tr('ins.k.wonHint', { a: num(answered.length), n: num(priv.length) }))}
+      ${tile(tr('ins.k.rec'), pct(recYes(recAnswered)), delta(recYes(recAnswered), recYes(recPrev)), tr('ins.k.recHint', { a: num(recAnswered.length), n: num(cur.length) }))}
+      ${tile(tr('ins.k.onTime'), pct(onTime(priv)), delta(onTime(priv), onTime(privPrev)), tr('ins.k.onTimeHint', { n: num(priv.filter(late).length) }))}
     </div>`;
 
     // Alerts (case management style)
     const alerts = [];
     const now = Date.now();
-    const stale = priv.filter((r) => r.status !== 'resolved' && now - new Date(r.created_at) > 48 * 36e5);
+    const stale = priv.filter(late);
     if (stale.length) alerts.push(['critical', tr('ins.al.stale', { n: num(stale.length) })]);
+    // Escalation: the group owner sees which branch is past its deadlines
+    if (multi) scope.map((b) => [b, stale.filter((r) => r.business_id === b.id).length]).filter((x) => x[1]).sort((a, z) => z[1] - a[1]).slice(0, 3)
+      .forEach(([b, n]) => alerts.push(['critical', tr('ins.al.staleBiz', { name: label(b), n: num(n) })]));
     scope.forEach((b) => {
       const c = cur.filter((r) => r.business_id === b.id), p = prev.filter((r) => r.business_id === b.id);
       if (c.length >= 5 && p.length >= 5 && csat(p) - csat(c) >= 10) alerts.push(['serious', tr('ins.al.drop', { name: label(b), a: pct(csat(p)), b: pct(csat(c)) })]);
@@ -299,9 +309,10 @@ const RFInsights = (() => {
     let heatBizHtml = '';
     if (multi && withIssues.length) {
       const bs = scope.filter((bz) => withIssues.some((r) => r.business_id === bz.id));
-      const m = bs.map((bz) => ISSUES.map((k) => withIssues.filter((r) => r.business_id === bz.id && issuesOf(r).includes(k)).length));
+      const hk = ISSUES.filter((k) => withIssues.some((r) => issuesOf(r).includes(k)));
+      const m = bs.map((bz) => hk.map((k) => withIssues.filter((r) => r.business_id === bz.id && issuesOf(r).includes(k)).length));
       heatBizHtml = `<div class="card"><h3>${tr(viewGroup ? 'ins.c.heatBranch' : 'ins.c.heatBiz')}</h3><p class="muted small">${tr('ins.c.heatBizSub')}</p>
-        ${heat(bs.map((bz) => esc(label(bz))), ISSUES.map((k) => `${ISSUE_ICON[k]}<small>${tr(`a.issue.${k}`)}</small>`), m, (i, j, v) => tr('ins.tip.heatBiz', { b: label(bs[i]), i: tr(`a.issue.${ISSUES[j]}`), n: num(v) }))}</div>`;
+        ${heat(bs.map((bz) => esc(label(bz))), hk.map((k) => `${ISSUE_ICON[k]}<small>${tr(`a.issue.${k}`)}</small>`), m, (i, j, v) => tr('ins.tip.heatBiz', { b: label(bs[i]), i: tr(`a.issue.${hk[j]}`), n: num(v) }))}</div>`;
     }
 
     // When problems happen: day × time band for low ratings
@@ -323,10 +334,21 @@ const RFInsights = (() => {
     const ar = cur.filter((r) => r.lang === 'ar').length, en = cur.filter((r) => r.lang === 'en').length;
     const langHtml = ar + en ? `<div class="card"><h3>${tr('ins.c.lang')}</h3>${bars([{ label: 'العربية', value: ar }, { label: 'English', value: en }], { fmt: (v) => `${num(v)} · ${pct((100 * v) / (ar + en))}` })}<p class="muted small">${tr('ins.c.langSub')}</p></div>` : '';
 
+    // Staff shout-outs: who guests thanked, per branch
+    const shoutMap = new Map();
+    cur.filter((r) => r.shoutout).forEach((r) => {
+      const key = `${r.business_id}|${r.shoutout.trim().toLowerCase()}`;
+      const e = shoutMap.get(key) || { name: r.shoutout.trim(), id: r.business_id, n: 0 };
+      e.n++; shoutMap.set(key, e);
+    });
+    const shouts = [...shoutMap.values()].sort((a, z) => z.n - a.n).slice(0, 8);
+    const shoutHtml = shouts.length ? `<div class="card"><h3>${tr('ins.c.shout')}</h3><p class="muted small">${tr('ins.c.shoutSub')}</p>${bars(shouts.map((x) => ({ label: esc(x.name), value: x.n, sub: multi ? ` · ${esc(label(bizList.find((b) => b.id === x.id) || {}))}` : '' })), { tip: (i) => tr('ins.tip.shout', { l: i.label, n: num(i.value) }) })}</div>` : '';
+    const recHtml = recAnswered.length ? `<div class="card"><h3>${tr('ins.c.rec')}</h3><p class="muted small">${tr('ins.c.recSub')}</p>${bars(['yes', 'maybe', 'no'].map((k) => ({ label: tr(`a.rec.${k}`), value: recAnswered.filter((r) => r.recommend === k).length })), { fmt: (v) => `${num(v)} · ${pct((100 * v) / recAnswered.length)}` })}</div>` : '';
+
     root.innerHTML = filters + alertsHtml + kpis + trend
       + `<div class="ix-grid2">${driverHtml}${distHtml}</div>`
       + `<div class="ix-grid2">${segHtml}${themeHtml}</div>`
-      + groupsHtml + boardHtml + heatBizHtml + `<div class="ix-grid2">${whenHtml}${langHtml}</div>`
+      + groupsHtml + boardHtml + heatBizHtml + `<div class="ix-grid2">${recHtml}${shoutHtml}</div>` + `<div class="ix-grid2">${whenHtml}${langHtml}</div>`
       + `<p class="muted small ix-foot">${tr('ins.foot')}</p>`;
   }
 
@@ -372,8 +394,8 @@ const RFInsights = (() => {
   function csv() {
     const { cur } = periods();
     const q = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
-    const head = ['date', 'group', 'business', 'type', 'rating', 'route', 'issues', 'status', 'resolved_at', 'language', 'text', 'reply', 'guest_says'];
-    const lines = cur.map((r) => [r.created_at, gName(groupById(groupIdOf(r.business_id))), nameOf(r.business_id), typeOf(r.business_id), r.rating, r.route, issuesOf(r).join('|'), r.status, r.resolved_at || '', r.lang || '', textOf(r), r.reply || '', r.guest_verdict || ''].map(q).join(','));
+    const head = ['date', 'group', 'business', 'type', 'rating', 'route', 'issues', 'status', 'resolved_at', 'language', 'text', 'reply', 'guest_says', 'recommend', 'shoutout', 'assigned_to', 'due_at'];
+    const lines = cur.map((r) => [r.created_at, gName(groupById(groupIdOf(r.business_id))), nameOf(r.business_id), typeOf(r.business_id), r.rating, r.route, issuesOf(r).join('|'), r.status, r.resolved_at || '', r.lang || '', textOf(r), r.reply || '', r.guest_verdict || '', r.recommend || '', r.shoutout || '', r.assigned_to || '', r.due_at || ''].map(q).join(','));
     const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `review-finder-cx-${new Date().toISOString().slice(0, 10)}.csv` });
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -394,7 +416,7 @@ const RFInsights = (() => {
     ].map(([id, name, nameAr, businessType, q, groupId = '', branchName = '', branchNameAr = '']) => ({ id, slug: id, name, nameAr, businessType, q, groupId, branchName, branchNameAr }));
     const words = {
       good: ['Great food and friendly staff', 'Lovely atmosphere, will come again', 'خدمة ممتازة وأكل لذيذ', 'Fast service, very clean', 'أفضل كرك في جدة'],
-      bad: { food: ['Food arrived cold', 'الأكل بارد', 'Burger was overcooked'], service: ['Waited 40 minutes for our order', 'Slow service at dinner', 'الطلب تأخر كثير'],
+      bad: { other: ['Waited too long', 'الانتظار طويل', 'Not what I expected'], food: ['Food arrived cold', 'الأكل بارد', 'Burger was overcooked'], service: ['Waited 40 minutes for our order', 'Slow service at dinner', 'الطلب تأخر كثير'],
         staff: ['Waiter was rude', 'Staff ignored us', 'الموظف ما كان محترم'], clean: ['Table was dirty', 'Bathroom not clean', 'الطاولة وسخة'], value: ['Too expensive for the portion', 'Prices went up', 'السعر غالي'] },
     };
     const reviews = [];
@@ -409,14 +431,17 @@ const RFInsights = (() => {
         let r = Math.round(b.q + drift + (rnd() - 0.5) * 2.6 - (dinner && t.getUTCDay() === 4 ? 0.7 : 0));
         r = Math.max(1, Math.min(5, r));
         const priv = r < 4;
-        const issues = priv && b.businessType === 'restaurant' ? [pick(dinner ? ['service', 'service', 'food', 'staff'] : ['food', 'clean', 'value'])].concat(rnd() < 0.25 ? [pick(ISSUES)] : []) : [];
+        const own = RC.issuesFor(b);
+        const issues = !priv ? [] : b.businessType === 'restaurant' ? [pick(dinner ? ['service', 'service', 'food', 'staff'] : ['food', 'clean', 'value'])].concat(rnd() < 0.25 ? [pick(own)] : []) : [pick(own)];
         const uniq = [...new Set(issues)];
-        const text = priv ? (uniq.length ? pick(words.bad[uniq[0]]) : pick(Object.values(words.bad).flat())) : (rnd() < 0.6 ? pick(words.good) : '');
+        const text = priv ? pick(words.bad[uniq[0]] || words.bad.other) : (rnd() < 0.6 ? pick(words.good) : '');
         const resolved = priv && rnd() < 0.75;
         const reply = priv && (resolved || rnd() < 0.3) ? 'Sorry about this, we have fixed it.' : '';
         const verdict = reply && rnd() < 0.55 ? (rnd() < b.q / 5.6 ? 'fixed' : 'not_fixed') : '';
         reviews.push({ id: `${b.id}-${i}`, business_id: b.id, rating: r, route: priv ? 'private' : 'google', issues: uniq, text, status: resolved ? 'resolved' : 'new', reply, guest_verdict: verdict,
-          created_at: t.toISOString(), resolved_at: resolved ? new Date(+t + (2 + rnd() * 30) * 36e5).toISOString() : null, lang: /[؀-ۿ]/.test(text) || rnd() < 0.4 ? 'ar' : 'en' });
+          recommend: rnd() < 0.7 ? (r >= 4 ? 'yes' : r === 3 ? 'maybe' : 'no') : '', shoutout: r >= 4 && rnd() < 0.3 ? pick(['Ahmed', 'Sara', 'Khalid', 'Noura']) : '',
+          due_at: priv ? new Date(+t + 48 * 36e5).toISOString() : null, assigned_to: resolved ? 'Manager' : '',
+          created_at: t.toISOString(), resolved_at: resolved ? new Date(+t + (2 + rnd() * 60) * 36e5).toISOString() : null, lang: /[؀-ۿ]/.test(text) || rnd() < 0.4 ? 'ar' : 'en' });
       }
     });
     return { biz, groups, reviews };

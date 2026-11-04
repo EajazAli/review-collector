@@ -191,3 +191,19 @@ I18N.add({
     'social.website': 'الموقع الإلكتروني',
   },
 });
+
+/* Industry issues, recommend question, staff shout-outs */
+I18N.add({
+  en: {
+    'r.issue.room': 'Room comfort', 'r.issue.checkin': 'Check-in / check-out', 'r.issue.wait': 'Long waiting time', 'r.issue.doctor': 'Doctor communication',
+    'r.issue.billing': 'Billing / insurance', 'r.issue.booking': 'Appointment booking', 'r.issue.result': 'Result of the service', 'r.issue.stock': 'Product availability',
+    'r.rec.label': 'Would you recommend us to a friend?', 'r.rec.yes': 'Yes', 'r.rec.maybe': 'Maybe', 'r.rec.no': 'No',
+    'r.shout.label': 'Did someone make your visit great? (optional)', 'r.shout.ph': 'Their name',
+  },
+  ar: {
+    'r.issue.room': 'الغرفة', 'r.issue.checkin': 'الدخول أو المغادرة', 'r.issue.wait': 'طول الانتظار', 'r.issue.doctor': 'تواصل الطبيب',
+    'r.issue.billing': 'الفواتير والتأمين', 'r.issue.booking': 'حجز الموعد', 'r.issue.result': 'نتيجة الخدمة', 'r.issue.stock': 'توفر المنتجات',
+    'r.rec.label': 'هل تنصح بنا لصديق؟', 'r.rec.yes': 'نعم', 'r.rec.maybe': 'ربما', 'r.rec.no': 'لا',
+    'r.shout.label': 'هل جعل أحدهم زيارتك مميزة؟ (اختياري)', 'r.shout.ph': 'اسمه',
+  },
+});

@@ -89,3 +89,19 @@ I18N.add({
     'ins.foot': 'رضا العملاء = نسبة تقييمات 4★ و5★. المقارنات مجهولة الهوية وتظهر فقط لأنواع الأنشطة التي تضم 3 منشآت أو أكثر.',
   },
 });
+
+/* Recommend score, deadlines, shout-outs */
+I18N.add({
+  en: {
+    'ins.k.rec': 'Would recommend', 'ins.k.recHint': '{a} of {n} guests answered', 'ins.k.onTime': 'Resolved on time', 'ins.k.onTimeHint': '{n} open past deadline',
+    'ins.al.stale': 'Complaints past their deadline: {n}.', 'ins.al.staleBiz': '{name}: past deadline: {n}.',
+    'ins.c.rec': 'Would guests recommend you?', 'ins.c.recSub': 'Answers to the one-tap question on the review page',
+    'ins.c.shout': 'Staff shout-outs', 'ins.c.shoutSub': 'Who happy guests thanked by name', 'ins.tip.shout': '{l}: thanked {n} times',
+  },
+  ar: {
+    'ins.k.rec': 'ينصحون بنا', 'ins.k.recHint': 'أجاب {a} من {n} ضيف', 'ins.k.onTime': 'حُلّت في موعدها', 'ins.k.onTimeHint': '{n} مفتوحة بعد الموعد',
+    'ins.al.stale': 'شكاوى تجاوزت موعدها النهائي: {n}.', 'ins.al.staleBiz': '{name}: تجاوزت الموعد: {n}.',
+    'ins.c.rec': 'هل ينصح بك عملاؤك؟', 'ins.c.recSub': 'إجابات السؤال السريع في صفحة التقييم',
+    'ins.c.shout': 'شكر الموظفين', 'ins.c.shoutSub': 'من شكرهم الضيوف الراضون بالاسم', 'ins.tip.shout': '{l}: شُكر {n} مرات',
+  },
+});

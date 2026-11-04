@@ -59,6 +59,17 @@
         <textarea id="text" rows="4" maxlength="1500"></textarea>
       </label>
 
+      <div class="ask" id="recBox">
+        <span class="label" id="recLabel" data-i18n="r.rec.label">Would you recommend us to a friend?</span>
+        <div class="chips" id="recChips" role="group" aria-labelledby="recLabel"></div>
+      </div>
+
+      <div class="ask" id="shoutBox" hidden>
+        <span class="label" id="shoutLabel" data-i18n="r.shout.label">Did someone make your visit great? (optional)</span>
+        <div class="chips" id="shoutChips" role="group" aria-labelledby="shoutLabel"></div>
+        <input id="shoutText" maxlength="60" autocomplete="off" aria-labelledby="shoutLabel" data-i18n-ph="r.shout.ph" />
+      </div>
+
       <div class="private" id="privateFields" hidden>
         <div class="photos">
           <label class="attach">

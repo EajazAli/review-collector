@@ -355,3 +355,27 @@ I18N.add({
     'a.issue.food': 'جودة الطعام', 'a.issue.service': 'بطء الخدمة', 'a.issue.staff': 'تعامل الموظفين', 'a.issue.clean': 'النظافة',
   },
 });
+
+/* Industry issues, staff list, complaint owner and deadline */
+I18N.add({
+  en: {
+    'a.issue.room': 'Room comfort', 'a.issue.checkin': 'Check-in / check-out', 'a.issue.wait': 'Long waiting time', 'a.issue.doctor': 'Doctor communication',
+    'a.issue.billing': 'Billing / insurance', 'a.issue.booking': 'Appointment booking', 'a.issue.result': 'Result of the service', 'a.issue.stock': 'Product availability',
+    'a.type.hintIssues': 'Guests with a low rating can tap: {list}.', 'a.type.hintBooking': 'Guests are also shown how to review you on Booking.com.',
+    'a.staff': 'Staff guests can thank', 'a.staff.sub': 'One name per line. Happy guests can tap a name on the review page, so use first names only. Leave empty and guests can type a name instead.', 'a.staff.ph': 'Ahmed',
+    'a.f.overdue': 'Past deadline', 'a.stat.overdue': 'Past deadline',
+    'a.case.owner': 'Assigned to', 'a.case.ownerPh': 'Name of the person handling this', 'a.case.due': 'Deadline', 'a.case.noDue': 'No deadline', 'a.case.in': 'Change to {n} hours from now',
+    'a.case.late': 'Past deadline', 'a.case.saved': 'Assignment saved', 'a.case.dueSaved': 'Deadline updated',
+    'a.rec.yes': 'Would recommend', 'a.rec.maybe': 'Might recommend', 'a.rec.no': 'Would not recommend',
+  },
+  ar: {
+    'a.issue.room': 'الغرفة', 'a.issue.checkin': 'الدخول أو المغادرة', 'a.issue.wait': 'طول الانتظار', 'a.issue.doctor': 'تواصل الطبيب',
+    'a.issue.billing': 'الفواتير والتأمين', 'a.issue.booking': 'حجز الموعد', 'a.issue.result': 'نتيجة الخدمة', 'a.issue.stock': 'توفر المنتجات',
+    'a.type.hintIssues': 'يمكن للضيف صاحب التقييم المنخفض اختيار: {list}.', 'a.type.hintBooking': 'ويُعرض على الضيف أيضاً كيفية تقييمكم على Booking.com.',
+    'a.staff': 'الموظفون الذين يمكن شكرهم', 'a.staff.sub': 'اسم واحد في كل سطر. يمكن للضيف الراضي اختيار الاسم في صفحة التقييم، لذا استخدم الاسم الأول فقط. إذا تركتها فارغة يمكن للضيف كتابة الاسم.', 'a.staff.ph': 'أحمد',
+    'a.f.overdue': 'تجاوزت الموعد', 'a.stat.overdue': 'تجاوزت الموعد',
+    'a.case.owner': 'مسندة إلى', 'a.case.ownerPh': 'اسم الشخص المسؤول', 'a.case.due': 'الموعد النهائي', 'a.case.noDue': 'بدون موعد', 'a.case.in': 'تغيير إلى {n} ساعة من الآن',
+    'a.case.late': 'تجاوزت الموعد', 'a.case.saved': 'تم حفظ الإسناد', 'a.case.dueSaved': 'تم تحديث الموعد',
+    'a.rec.yes': 'ينصح بنا', 'a.rec.maybe': 'قد ينصح بنا', 'a.rec.no': 'لا ينصح بنا',
+  },
+});

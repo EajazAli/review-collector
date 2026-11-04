@@ -30,8 +30,18 @@ const RC = (() => {
   };
   // Business types; quick-pick issues are offered to restaurant / café guests only.
   const BUSINESS_TYPES = ['restaurant', 'hotel', 'salon', 'clinic', 'retail', 'other'];
-  const ISSUE_KEYS = ['food', 'service', 'staff', 'clean', 'value'];
-  const usesIssues = (b) => (b?.businessType || 'restaurant') === 'restaurant';
+  // Quick-pick issues on low ratings, per type of business
+  const ISSUES_BY_TYPE = {
+    restaurant: ['food', 'service', 'staff', 'clean', 'value'],
+    hotel: ['room', 'checkin', 'staff', 'clean', 'value'],
+    clinic: ['wait', 'doctor', 'staff', 'clean', 'billing', 'booking'],
+    salon: ['wait', 'result', 'staff', 'clean', 'value'],
+    retail: ['wait', 'stock', 'staff', 'clean', 'value'],
+    other: ['wait', 'staff', 'clean', 'value'],
+  };
+  const ISSUE_KEYS = [...new Set(Object.values(ISSUES_BY_TYPE).flat())];
+  const ISSUE_ICON = { food: '🍽️', service: '⏱️', staff: '🙋', clean: '🧹', value: '💸', room: '🛏️', checkin: '🛎️', wait: '⏳', doctor: '🩺', billing: '🧾', booking: '📅', result: '✨', stock: '📦' };
+  const issuesFor = (b) => ISSUES_BY_TYPE[b?.businessType] || ISSUES_BY_TYPE.restaurant;
   // Hotels also get Booking.com help (guests: how to review there; owners: reply in the Extranet).
   const usesBooking = (b) => b?.businessType === 'hotel';
   const BOOKING_TRIPS_URL = 'https://secure.booking.com/mytrips.html';
@@ -68,6 +78,7 @@ const RC = (() => {
     theme: { ...THEMES.sunset, ...(r.theme || {}) }, threshold: r.threshold,
     googleReviewUrl: r.google_review_url, whatsapp: [...(r.whatsapp || []), '', ''].slice(0, 2),
     webhookUrl: r.webhook_url, social: { ...EMPTY_SOCIAL, ...(r.social || {}) },
+    staff: r.staff || [],
     groupId: r.group_id || '', branchName: r.branch_name || '', branchNameAr: r.branch_name_ar || '',
     createdAt: r.created_at, updatedAt: r.updated_at,
   });
@@ -76,6 +87,7 @@ const RC = (() => {
     theme: b.theme || {}, threshold: +b.threshold || 4,
     google_review_url: b.googleReviewUrl || '', whatsapp: (b.whatsapp || ['', '']).map((x) => (x || '').trim()),
     webhook_url: b.webhookUrl || '', social: b.social || {},
+    staff: (b.staff || []).map((x) => x.trim()).filter(Boolean).slice(0, 50),
     group_id: b.groupId || null, branch_name: (b.branchName || '').trim(), branch_name_ar: (b.branchNameAr || '').trim(),
   });
   const fail = (error) => { if (error) throw new Error(error.message || String(error)); };
@@ -244,6 +256,8 @@ const RC = (() => {
       guest_name: item.guestName || '', guest_phone: item.guestPhone || '', images: [], status: 'new',
       issues: (item.issues || []).filter((k) => ISSUE_KEYS.includes(k)),
       lang: item.lang === 'ar' ? 'ar' : 'en',
+      recommend: ['yes', 'maybe', 'no'].includes(item.recommend) ? item.recommend : '',
+      shoutout: (item.shoutout || '').trim().slice(0, 60),
     };
     // Private feedback gets a secret link so the guest can follow it up (needs supabase/007_follow_up.sql).
     if (item.route === 'private') review.ticket = token();
@@ -259,11 +273,15 @@ const RC = (() => {
     }
     // Any column the database doesn't have yet is dropped; issues are then kept inside the text.
     let saved = review;
-    const { error } = await withMissingColumns(review, (row) => {
+    let { error } = await withMissingColumns(review, (row) => {
       saved = row;
       if (!('issues' in row) && review.issues.length && !row.text.startsWith('[')) row = { ...row, text: `[${review.issues.join(', ')}] ${row.text}`.trim() };
       return sb.from('reviews').insert(row);
     });
+    // Database not yet updated for the newer issue types: keep the feedback, with the issues in the text.
+    if (error?.code === '23514' && review.issues.length) {
+      ({ error } = await sb.from('reviews').insert({ ...saved, issues: [], text: `[${review.issues.join(', ')}] ${review.text}`.trim() }));
+    }
     const ticket = !error && saved.ticket ? saved.ticket : null;
     return { ok: !error, error: error?.message, review, ticket };
   }
@@ -412,7 +430,7 @@ const RC = (() => {
   };
 
   return {
-    configured, sb, BUSINESS_TYPES, ISSUE_KEYS, usesIssues, usesBooking, BOOKING_TRIPS_URL, BOOKING_EXTRANET_URL, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
+    configured, sb, BUSINESS_TYPES, ISSUE_KEYS, ISSUE_ICON, issuesFor, usesBooking, BOOKING_TRIPS_URL, BOOKING_EXTRANET_URL, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
     listMembers, setMembers, submitReview, listReviews, cxBenchmarks, getTicket, rateTicket, updateReview, photoUrls,

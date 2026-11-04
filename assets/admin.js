@@ -6,7 +6,7 @@
   const num = (n) => I18N.fmtNum(n);
   // Quick-pick issues guests can tap on low ratings
   const ISSUE_KEYS = RC.ISSUE_KEYS;
-  const ISSUE_ICON = { food: '🍽️', service: '⏱️', staff: '🙋', clean: '🧹', value: '💸' };
+  const ISSUE_ICON = RC.ISSUE_ICON;
   const TYPE_ICON = { restaurant: '🍽️', hotel: '🏨', salon: '💇', clinic: '🩺', retail: '🛍️', other: '✨' };
   // Reviews saved before the issues column existed carry them as a "[food, service] ..." prefix.
   const LEGACY = /^\[((?:food|service|staff|clean|value)(?:,\s*(?:food|service|staff|clean|value))*)\]\s*/;
@@ -170,6 +170,7 @@
     form.wa0.value = d.whatsapp[0] || ''; form.wa1.value = d.whatsapp[1] || '';
     form.webhookUrl.value = d.webhookUrl || '';
     form.members.value = d.members || '';
+    form.staffList.value = (d.staff || []).join('\n');
     renderGroupField();
     SOCIAL_KEYS.forEach((k) => (form[`social_${k}`].value = d.social[k] || ''));
     renderLogo(); renderThreshold(); renderSwatches();
@@ -189,6 +190,8 @@
       draft.theme = { ...draft.theme, [n]: v, preset: 'custom' }; renderSwatches();
     } else if (n === 'wa0' || n === 'wa1') {
       draft.whatsapp[+n.slice(2)] = v.trim();
+    } else if (n === 'staffList') {
+      draft.staff = v.split('\n');
     } else if (n === 'businessType') {
       draft.businessType = v; renderTypeHint();
     } else if (n.startsWith('social_')) {
@@ -250,7 +253,8 @@
   });
 
   function renderTypeHint() {
-    $('typeHint').textContent = tr(RC.usesIssues(draft) ? 'a.type.hintOn' : RC.usesBooking(draft) ? 'a.type.hintHotel' : 'a.type.hintOff');
+    const list = RC.issuesFor(draft).map((k) => tr(`a.issue.${k}`)).join(I18N.lang === 'ar' ? '، ' : ', ');
+    $('typeHint').textContent = tr('a.type.hintIssues', { list }) + (RC.usesBooking(draft) ? ` ${tr('a.type.hintBooking')}` : '');
     $('bkField').hidden = !RC.usesBooking(draft);
   }
 
@@ -390,6 +394,20 @@
     renderInbox();
   }
 
+  const isOverdue = (r) => r.route === 'private' && r.status !== 'resolved' && r.due_at && new Date(r.due_at) < new Date();
+  const DUE_HOURS = [4, 24, 48, 72];
+  function caseBar(r) {
+    if (r.route !== 'private' || !('assigned_to' in r) || r.status === 'resolved') return '';
+    const due = r.due_at ? new Date(r.due_at) : null;
+    return `<div class="fb-case">
+      <label><span>${tr('a.case.owner')}</span><input data-assign="${r.id}" list="teamList" maxlength="120" dir="auto" value="${RC.esc(r.assigned_to || '')}" placeholder="${RC.esc(tr('a.case.ownerPh'))}" /></label>
+      <label><span>${tr('a.case.due')}</span><select data-due="${r.id}">
+        <option value="">${due ? I18N.fmtDate(r.due_at) : tr('a.case.noDue')}</option>
+        ${DUE_HOURS.map((h) => `<option value="${h}">${tr('a.case.in', { n: num(h) })}</option>`).join('')}
+      </select></label>
+    </div>`;
+  }
+
   function renderInbox() {
     const fb = $('fBiz');
     const cur = fb.value || 'all';
@@ -417,19 +435,24 @@
       [num(scoped.length - priv.length), tr('a.stat.google')],
       [num(priv.filter((r) => r.status !== 'resolved').length), tr('a.stat.open')],
       [avg === '–' ? avg : num(+avg), tr('a.stat.avg')],
+      [num(priv.filter(isOverdue).length), tr('a.stat.overdue')],
     ].map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
 
     const route = $('fRoute').value;
-    const shown = route === 'all' ? scoped : scoped.filter((r) => r.route === route);
+    const shown = route === 'all' ? scoped : route === 'overdue' ? scoped.filter(isOverdue) : scoped.filter((r) => r.route === route);
     const biz = (id) => list.find((b) => b.id === id) || {};
     const name = (id) => (biz(id).id ? RC.displayName(biz(id), I18N.lang) : '');
-    $('feed').innerHTML = shown.length ? shown.map((r) => `
+    const team = [...new Set([...list.flatMap((b) => b.staff || []), ...reviews.map((r) => r.assigned_to).filter(Boolean)])];
+    $('feed').innerHTML = `<datalist id="teamList">${team.map((n) => `<option value="${RC.esc(n)}"></option>`).join('')}</datalist>` + (shown.length ? shown.map((r) => `
       <article class="fb ${r.status === 'resolved' ? 'resolved' : ''}">
         <div class="fb-top">
           <span class="dots" aria-label="${r.rating} out of 5">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= r.rating ? 'on' : ''}"></i>`).join('')}</span>
           <b>${RC.esc(name(r.business_id))}</b>
           <span class="tag ${r.route === 'private' ? 'priv' : 'pub'}">${r.route === 'private' ? tr('a.tag.private') : tr('a.tag.google')}</span>
           ${r.status === 'resolved' ? `<span class="tag">${tr('a.tag.resolved')}</span>` : ''}
+          ${isOverdue(r) ? `<span class="tag late">⏰ ${tr('a.case.late')}</span>` : ''}
+          ${r.recommend ? `<span class="tag">${{ yes: '👍', maybe: '🤔', no: '👎' }[r.recommend]} ${tr(`a.rec.${r.recommend}`)}</span>` : ''}
+          ${r.shoutout ? `<span class="tag shout">👏 <bdi>${RC.esc(r.shoutout)}</bdi></span>` : ''}
           ${r.guest_verdict ? `<span class="tag verdict ${r.guest_verdict}">${r.guest_verdict === 'fixed' ? '👍' : '👎'} ${tr(`a.fu.v.${r.guest_verdict}`)}</span>` : ''}
           <time>${I18N.fmtDate(r.created_at)}</time>
         </div>
@@ -440,6 +463,7 @@
           <span class="who-line">${tr('a.sentToGoogle')}${RC.googleReviewsUrl(biz(r.business_id)) ? ` · <a class="link small" target="_blank" rel="noopener" href="${RC.esc(RC.googleReviewsUrl(biz(r.business_id)))}">${tr('a.seeOnGoogle')}</a>` : ''}</span>
           <a class="btn g-btn" target="_blank" rel="noopener" href="${RC.GOOGLE_REPLY_URL}" title="${tr('a.replyGoogle.title')}"><svg viewBox="0 0 48 48" aria-hidden="true">${document.querySelector('#openGoogleReviews svg').innerHTML}</svg>${tr('a.replyGoogle')}</a>
         </div>` : ''}
+        ${caseBar(r)}
         ${r.route === 'private' && r.ticket ? `<div class="fb-reply">
           <label class="fb-rl" for="rp-${r.id}">${tr('a.fu.label')}${r.replied_at ? ` <small>· ${tr('a.fu.saved', { when: I18N.fmtDate(r.replied_at) })}</small>` : ''}</label>
           <textarea id="rp-${r.id}" data-reply="${r.id}" rows="2" maxlength="2000" dir="auto" placeholder="${RC.esc(tr('a.fu.ph'))}">${RC.esc(r.reply || '')}</textarea>
@@ -455,7 +479,7 @@
           <button class="btn" data-toggle="${r.id}">${r.status === 'resolved' ? tr('a.reopen') : tr('a.resolve')}</button>
         </div>` : ''}
       </article>`).join('')
-      : `<div class="card empty"><h2>${tr('a.nothing.title')}</h2><p class="muted">${tr('a.nothing.text')}</p></div>`;
+      : `<div class="card empty"><h2>${tr('a.nothing.title')}</h2><p class="muted">${tr('a.nothing.text')}</p></div>`);
 
     // Hotels reply to Booking.com reviews in the Extranet
     const hasHotel = list.some((b) => RC.usesBooking(b));
@@ -466,6 +490,20 @@
   }
   $('fBiz').addEventListener('change', renderInbox);
   $('fRoute').addEventListener('change', renderInbox);
+  // Who owns a complaint, and by when
+  $('feed').addEventListener('change', async (e) => {
+    const { assign, due } = e.target.dataset;
+    if (!assign && !due) return;
+    const r = reviews.find((x) => x.id === (assign || due));
+    const patch = assign ? { assigned_to: e.target.value.trim() } : { due_at: new Date(Date.now() + +e.target.value * 36e5).toISOString() };
+    if (due && !e.target.value) return;
+    try {
+      await RC.updateReview(r.id, patch);
+      Object.assign(r, patch);
+      toast(tr(assign ? 'a.case.saved' : 'a.case.dueSaved'));
+      renderInbox();
+    } catch (err) { toast(friendly(err)); }
+  });
   // WhatsApp message to the guest, in the language they used on the review page.
   const GUEST_WA = {
     en: (v) => `Hi${v.name ? ` ${v.name}` : ''}, this is ${v.biz}.\n\n${v.reply}\n\nYou can see this and tell us if it's sorted here:\n${v.link}`,

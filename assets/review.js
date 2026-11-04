@@ -18,18 +18,12 @@
   ];
 
   let biz = null;
-  // Quick-pick issues for low ratings (keys are stored; labels come from the language file).
-  const ISSUES = [
-    { key: 'food', icon: '🍽️' },
-    { key: 'service', icon: '⏱️' },
-    { key: 'staff', icon: '🙋' },
-    { key: 'clean', icon: '🧹' },
-    { key: 'value', icon: '💸' },
-  ];
   const picked = new Set();
+  let recommend = '';      // 'yes' | 'maybe' | 'no' (optional)
+  let shoutPick = '';      // staff name tapped by the guest
   const I18N_LABEL = {
-    en: { food: 'Food quality', service: 'Slow service', staff: 'Staff attitude', clean: 'Cleanliness', value: 'Poor value for money' },
-    ar: { food: 'جودة الطعام', service: 'بطء الخدمة', staff: 'تعامل الموظفين', clean: 'النظافة', value: 'لا يستحق السعر' },
+    en: { food: 'Food quality', service: 'Slow service', staff: 'Staff attitude', clean: 'Cleanliness', value: 'Poor value for money', room: 'Room comfort', checkin: 'Check-in / check-out', wait: 'Long waiting time', doctor: 'Doctor communication', billing: 'Billing / insurance', booking: 'Appointment booking', result: 'Result of the service', stock: 'Product availability' },
+    ar: { food: 'جودة الطعام', service: 'بطء الخدمة', staff: 'تعامل الموظفين', clean: 'النظافة', value: 'لا يستحق السعر', room: 'الغرفة', checkin: 'الدخول أو المغادرة', wait: 'طول الانتظار', doctor: 'تواصل الطبيب', billing: 'الفواتير والتأمين', booking: 'حجز الموعد', result: 'نتيجة الخدمة', stock: 'توفر المنتجات' },
   };
   let rating = 0;
   let photos = [];
@@ -80,6 +74,8 @@
     $('headline').textContent = RC.localTagline(biz, I18N.lang) || t('r.headline');
     renderDots();
     renderChips();
+    renderRec();
+    renderShout();
     renderSocials();
     renderThumbs();
     setRating(rating, false);
@@ -107,9 +103,10 @@
     }
   }
   function renderChips() {
-    $('chips').innerHTML = ISSUES.map((it) =>
-      `<button type="button" class="chip${picked.has(it.key) ? ' on' : ''}" data-key="${it.key}" aria-pressed="${picked.has(it.key)}">`
-      + `<span class="chip-ic" aria-hidden="true">${it.icon}</span><span>${t(`r.issue.${it.key}`)}</span>`
+    if (!biz) return;
+    $('chips').innerHTML = RC.issuesFor(biz).map((k) =>
+      `<button type="button" class="chip${picked.has(k) ? ' on' : ''}" data-key="${k}" aria-pressed="${picked.has(k)}">`
+      + `<span class="chip-ic" aria-hidden="true">${RC.ISSUE_ICON[k]}</span><span>${t(`r.issue.${k}`)}</span>`
       + '<svg class="chip-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button>').join('');
   }
   $('chips').addEventListener('click', (e) => {
@@ -122,6 +119,35 @@
     chip.classList.remove('pop'); void chip.offsetWidth; chip.classList.add('pop');
     updateTextPrompt();
   });
+  // One-tap chips for the two optional questions
+  const CHECK = '<svg class="chip-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const REC = [['yes', '👍'], ['maybe', '🤔'], ['no', '👎']];
+  function renderRec() {
+    $('recChips').innerHTML = REC.map(([k, ic]) =>
+      `<button type="button" class="chip${recommend === k ? ' on' : ''}" data-rec="${k}" aria-pressed="${recommend === k}"><span class="chip-ic" aria-hidden="true">${ic}</span><span>${t(`r.rec.${k}`)}</span>${CHECK}</button>`).join('');
+  }
+  $('recChips').addEventListener('click', (e) => {
+    const k = e.target.closest('[data-rec]')?.dataset.rec;
+    if (!k) return;
+    recommend = recommend === k ? '' : k;
+    renderRec();
+  });
+  // Staff list set by the owner; without one the guest types a name.
+  function renderShout() {
+    const staff = biz?.staff || [];
+    $('shoutChips').hidden = !staff.length;
+    $('shoutText').hidden = !!staff.length;
+    $('shoutChips').innerHTML = staff.map((n) =>
+      `<button type="button" class="chip${shoutPick === n ? ' on' : ''}" data-name="${RC.esc(n)}" aria-pressed="${shoutPick === n}"><span dir="auto">${RC.esc(n)}</span>${CHECK}</button>`).join('');
+  }
+  $('shoutChips').addEventListener('click', (e) => {
+    const n = e.target.closest('[data-name]')?.dataset.name;
+    if (n === undefined) return;
+    shoutPick = shoutPick === n ? '' : n;
+    renderShout();
+  });
+  const shoutValue = () => (isPublic() ? (shoutPick || $('shoutText').value) : '');
+
   // After a low rating, glide the page so every issue sits above the floating Send button.
   function revealIssues() {
     requestAnimationFrame(() => {
@@ -183,17 +209,17 @@
       $('text').placeholder = t('r.text.phGood');
       $('privateFields').hidden = true;
       $('issuesBox').hidden = true;
+      $('shoutBox').hidden = false;
     } else {
       cta.className = 'cta';
       cta.textContent = t('r.send');
       $('textLabel').textContent = t('r.text.labelBad');
       $('text').placeholder = t('r.text.phBad');
       $('privateFields').hidden = false;
-      // Quick-pick issues are for restaurants / cafés only
-      $('issuesBox').hidden = !RC.usesIssues(biz);
-      if (!RC.usesIssues(biz)) picked.clear();
+      $('issuesBox').hidden = false;
+      $('shoutBox').hidden = true;
       updateTextPrompt();
-      if (animate && RC.usesIssues(biz)) revealIssues();
+      if (animate) revealIssues();
     }
   }
 
@@ -259,7 +285,7 @@
   $('cta').addEventListener('click', async () => {
     if (!rating || !biz) return;
     const text = $('text').value.trim();
-    const item = { rating, route: isPublic() ? 'google' : 'private', text, lang: I18N.lang };
+    const item = { rating, route: isPublic() ? 'google' : 'private', text, lang: I18N.lang, recommend, shoutout: shoutValue() };
 
     if (isPublic()) { await openGoogle(item); return; }
 
@@ -329,7 +355,7 @@
   });
   $('choiceGoogle').addEventListener('click', async () => {
     $('choice').hidden = true;
-    await openGoogle({ rating, text: $('text').value.trim() });
+    await openGoogle({ rating, text: $('text').value.trim(), recommend });
   });
   $('choiceMgmt').addEventListener('click', () => {
     $('choice').hidden = true;
@@ -374,6 +400,7 @@
   function reset() {
     photos = []; renderThumbs(); picked.clear(); renderChips(); $('waRetry').hidden = true; $('track').hidden = true; $('trackHint').hidden = true;
     $('text').value = ''; $('guestName').value = ''; $('guestPhone').value = '';
+    recommend = ''; shoutPick = ''; $('shoutText').value = ''; renderRec(); renderShout();
     setRating(0, false);
     doneKind = null;
     $('done').hidden = true; $('rate').hidden = false;
