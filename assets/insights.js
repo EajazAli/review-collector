@@ -118,10 +118,10 @@ const RFInsights = (() => {
       </svg></div>`;
   }
   // Heatmap (sequential single hue, count in each cell, hover tooltip)
-  function heat(rowLabels, colLabels, matrix, tipFn) {
+  function heat(rowLabels, colLabels, matrix, tipFn, minCol = 36) {
     const max = Math.max(1, ...matrix.flat());
     const step = (v) => (v ? Math.min(6, 1 + Math.floor((5 * v) / max)) : 0);
-    return `<div class="ix-heat" style="--cols:${colLabels.length}">
+    return `<div class="ix-heat" style="--cols:${colLabels.length};--min-col:${minCol}px">
       <span></span>${colLabels.map((c) => `<span class="ix-hc">${c}</span>`).join('')}
       ${rowLabels.map((r, i) => `<span class="ix-hr">${r}</span>${matrix[i].map((v, j) => `<span class="ix-cell s${step(v)}" data-tip="${esc(tipFn(i, j, v))}">${v ? num(v) : ''}</span>`).join('')}`).join('')}
     </div>`;
@@ -172,6 +172,13 @@ const RFInsights = (() => {
     const admin = ctx.user.isAdmin;
     const scope = inScope();
     const multi = scope.length > 1;
+    // Issues differ by type of business, so every issue view is built per type.
+    const inView = state.biz === 'all' ? scope : scope.filter((b) => b.id === state.biz);
+    const viewTypes = TYPES.filter((t) => inView.some((b) => (b.businessType || 'restaurant') === t));
+    const ofType = (rows, t) => rows.filter((r) => typeOf(r.business_id) === t);
+    const namesIssue = (rows, k) => rows.filter((r) => issuesOf(r).includes(k));
+    // The type's own list, plus anything older in the data (for example if a business changed type)
+    const keysFor = (t, rows) => [...new Set([...RC.issuesFor({ businessType: t }), ...ISSUES.filter((k) => namesIssue(rows, k).length)])];
     // Group view: a group was picked, or every business this login sees belongs to the same group.
     viewGroup = state.group !== 'all' ? groupById(state.group)
       : (scope.length > 1 && scope.every((b) => b.groupId && b.groupId === scope[0].groupId) ? groupById(scope[0].groupId) : null);
@@ -233,8 +240,11 @@ const RFInsights = (() => {
       const c = cur.filter((r) => r.business_id === b.id), p = prev.filter((r) => r.business_id === b.id);
       if (c.length >= 5 && p.length >= 5 && csat(p) - csat(c) >= 10) alerts.push(['serious', tr('ins.al.drop', { name: label(b), a: pct(csat(p)), b: pct(csat(c)) })]);
     });
-    const topIssue = ISSUES.map((k) => [k, priv.filter((r) => issuesOf(r).includes(k)).length]).sort((a, b) => b[1] - a[1])[0];
-    if (topIssue && topIssue[1] >= 3) alerts.push(['warning', tr('ins.al.issue', { issue: tr(`a.issue.${topIssue[0]}`), n: num(topIssue[1]) })]);
+    viewTypes.forEach((t) => {
+      const pr = ofType(priv, t);
+      const top = keysFor(t, pr).map((k) => [k, namesIssue(pr, k).length]).sort((a, b) => b[1] - a[1])[0];
+      if (top && top[1] >= 3) alerts.push(['warning', tr(viewTypes.length > 1 ? 'ins.al.issueT' : 'ins.al.issue', { type: tr(`a.type.${t}`), issue: tr(`a.issue.${top[0]}`), n: num(top[1]) })]);
+    });
     const ICON = { critical: '⛔', serious: '▼', warning: '⚠' };
     const alertsHtml = alerts.length ? `<div class="ix-alerts">${alerts.map(([lvl, msg]) => `<div class="ix-alert ${lvl}"><span class="ix-ai" aria-hidden="true">${ICON[lvl]}</span><b>${tr(`ins.lvl.${lvl}`)}</b><span>${esc(msg)}</span></div>`).join('')}</div>` : '';
 
@@ -251,9 +261,14 @@ const RFInsights = (() => {
 
     // Issue drivers: frequency + rating when present
     const withIssues = cur.filter((r) => issuesOf(r).length);
-    const drivers = ISSUES.map((k) => { const rows = cur.filter((r) => issuesOf(r).includes(k)); return { k, n: rows.length, avg: avg(rows) }; }).filter((d) => d.n).sort((a, b) => b.n - a.n);
-    const driverHtml = `<div class="card"><h3>${tr('ins.c.drivers')}</h3><p class="muted small">${tr('ins.c.driversSub')}</p>
-      ${drivers.length ? bars(drivers.map((d) => ({ label: `${ISSUE_ICON[d.k]} ${tr(`a.issue.${d.k}`)}`, value: (100 * d.n) / Math.max(1, withIssues.length), sub: ` · ${num(+d.avg.toFixed(1))}★` })), { max: 100, fmt: pct, tip: (i) => i.label }) : `<p class="ix-empty">${tr('ins.noIssues')}</p>`}</div>`;
+    const driverCard = (t) => {
+      const rows = ofType(withIssues, t);
+      const drivers = keysFor(t, rows).map((k) => { const hit = namesIssue(rows, k); return { k, n: hit.length, avg: avg(hit) }; }).filter((d) => d.n).sort((a, b) => b.n - a.n);
+      return `<div class="card"><h3>${tr(`ins.c.drivers.${t}`)}</h3><p class="muted small">${tr('ins.c.driversSub')}</p>
+      ${drivers.length ? bars(drivers.map((d) => ({ label: `${ISSUE_ICON[d.k]} ${tr(`a.issue.${d.k}`)}`, value: (100 * d.n) / Math.max(1, rows.length), sub: ` · ${num(+d.avg.toFixed(1))}★` })), { max: 100, fmt: pct, tip: (i) => i.label }) : `<p class="ix-empty">${tr('ins.noIssues')}</p>`}</div>`;
+    };
+    const typesWithIssues = viewTypes.filter((t) => ofType(withIssues, t).length);
+    const driverHtml = (typesWithIssues.length ? typesWithIssues : [viewTypes.length === 1 ? viewTypes[0] : 'other']).map(driverCard).join('');
 
     // CSAT by business type (portfolio) or benchmark (owner)
     let segHtml = '';
@@ -309,11 +324,15 @@ const RFInsights = (() => {
     // Heatmap business × issue
     let heatBizHtml = '';
     if (multi && withIssues.length) {
-      const bs = scope.filter((bz) => withIssues.some((r) => r.business_id === bz.id));
-      const hk = ISSUES.filter((k) => withIssues.some((r) => issuesOf(r).includes(k)));
-      const m = bs.map((bz) => hk.map((k) => withIssues.filter((r) => r.business_id === bz.id && issuesOf(r).includes(k)).length));
-      heatBizHtml = `<div class="card"><h3>${tr(viewGroup ? 'ins.c.heatBranch' : 'ins.c.heatBiz')}</h3><p class="muted small">${tr('ins.c.heatBizSub')}</p>
-        ${heat(bs.map((bz) => esc(label(bz))), hk.map((k) => `${ISSUE_ICON[k]}<small>${tr(`a.issue.${k}`)}</small>`), m, (i, j, v) => tr('ins.tip.heatBiz', { b: label(bs[i]), i: tr(`a.issue.${hk[j]}`), n: num(v) }))}</div>`;
+      const cards = typesWithIssues.map((t) => {
+        const rows = ofType(withIssues, t);
+        const bs = scope.filter((bz) => rows.some((r) => r.business_id === bz.id));
+        const hk = keysFor(t, rows);
+        const m = bs.map((bz) => hk.map((k) => namesIssue(rows, k).filter((r) => r.business_id === bz.id).length));
+        return `<div class="card"><h3>${tr(viewGroup ? 'ins.c.heatBranch' : `ins.c.heatBiz.${t}`)}</h3><p class="muted small">${tr('ins.c.heatBizSub')}</p>
+        ${heat(bs.map((bz) => esc(label(bz))), hk.map((k) => `${ISSUE_ICON[k]}<small>${tr(`a.issue.${k}`)}</small>`), m, (i, j, v) => tr('ins.tip.heatBiz', { b: label(bs[i]), i: tr(`a.issue.${hk[j]}`), n: num(v) }), 78)}</div>`;
+      });
+      heatBizHtml = cards.join('');
     }
 
     // When problems happen: day × time band for low ratings
@@ -321,9 +340,10 @@ const RFInsights = (() => {
     let whenHtml = '';
     if (low.length) {
       const m = DOW.map(() => BANDS.map(() => 0));
+      const band = (i) => tr(`${viewTypes.length === 1 && viewTypes[0] === 'restaurant' ? 'ins.band' : 'ins.time'}.${i}`);
       low.forEach((r) => { const t = riyadh(r.created_at); const bi = bandOf(t.hour); if (bi >= 0 && t.dow >= 0) m[t.dow][bi]++; });
       whenHtml = `<div class="card"><h3>${tr('ins.c.when')}</h3><p class="muted small">${tr('ins.c.whenSub')}</p>
-        ${heat(DOW.map((d) => tr(`ins.dow.${d}`)), BANDS.map((_, i) => tr(`ins.band.${i}`)), m, (i, j, v) => tr('ins.tip.when', { d: tr(`ins.dow.${DOW[i]}`), b: tr(`ins.band.${j}`), n: num(v) }))}</div>`;
+        ${heat(DOW.map((d) => tr(`ins.dow.${d}`)), BANDS.map((_, i) => band(i)), m, (i, j, v) => tr('ins.tip.when', { d: tr(`ins.dow.${DOW[i]}`), b: band(j), n: num(v) }))}</div>`;
     }
 
     // Text themes
@@ -439,7 +459,13 @@ const RFInsights = (() => {
     const words = {
       good: ['Great food and friendly staff', 'Lovely atmosphere, will come again', 'خدمة ممتازة وأكل لذيذ', 'Fast service, very clean', 'أفضل كرك في جدة'],
       bad: { other: ['Waited too long', 'الانتظار طويل', 'Not what I expected'], food: ['Food arrived cold', 'الأكل بارد', 'Burger was overcooked'], service: ['Waited 40 minutes for our order', 'Slow service at dinner', 'الطلب تأخر كثير'],
-        staff: ['Waiter was rude', 'Staff ignored us', 'الموظف ما كان محترم'], clean: ['Table was dirty', 'Bathroom not clean', 'الطاولة وسخة'], value: ['Too expensive for the portion', 'Prices went up', 'السعر غالي'] },
+        staff: ['Waiter was rude', 'Staff ignored us', 'الموظف ما كان محترم'], clean: ['Table was dirty', 'Bathroom not clean', 'الطاولة وسخة'], value: ['Too expensive for the portion', 'Prices went up', 'السعر غالي'],
+        room: ['Room was not ready', 'الغرفة غير مرتبة', 'Air conditioning was noisy'], checkin: ['Check-in took too long', 'تأخروا في تسجيل الدخول'], wait: ['Waited too long', 'الانتظار طويل'],
+        doctor: ['Doctor rushed the appointment', 'الطبيب ما شرح الحالة'], billing: ['Bill was not explained', 'مشكلة في التأمين'], booking: ['Could not get an appointment', 'الموعد تأجل بدون إبلاغ'],
+        result: ['Not the result I asked for', 'النتيجة ما كانت مثل المطلوب'], stock: ['Item was out of stock', 'المنتج غير متوفر'] },
+      // Restaurant wording would look wrong on a clinic or hotel
+      plain: { good: ['Friendly staff, very clean', 'خدمة ممتازة', 'Lovely experience, will come again', 'Quick and professional'],
+        staff: ['Receptionist was rude', 'Staff ignored us', 'الموظف ما كان محترم'], clean: ['The place was not clean', 'المكان غير نظيف'], value: ['Too expensive', 'Prices went up', 'السعر غالي'] },
     };
     const reviews = [];
     const now = Date.now();
@@ -456,7 +482,8 @@ const RFInsights = (() => {
         const own = RC.issuesFor(b);
         const issues = !priv ? [] : b.businessType === 'restaurant' ? [pick(dinner ? ['service', 'service', 'food', 'staff'] : ['food', 'clean', 'value'])].concat(rnd() < 0.25 ? [pick(own)] : []) : [pick(own)];
         const uniq = [...new Set(issues)];
-        const text = priv ? pick(words.bad[uniq[0]] || words.bad.other) : (rnd() < 0.6 ? pick(words.good) : '');
+        const own2 = b.businessType === 'restaurant' ? {} : words.plain;
+        const text = priv ? pick(own2[uniq[0]] || words.bad[uniq[0]] || words.bad.other) : (rnd() < 0.6 ? pick(own2.good || words.good) : '');
         const resolved = priv && rnd() < 0.75;
         const reply = priv && (resolved || rnd() < 0.3) ? 'Sorry about this, we have fixed it.' : '';
         const verdict = reply && rnd() < 0.55 ? (rnd() < b.q / 5.6 ? 'fixed' : 'not_fixed') : '';
