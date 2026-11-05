@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Review Finder · More 5-star Google reviews for your business</title>
-  <meta name="description" content="Review Finder by H&H Technology: QR review pages for restaurants, hospitals, clinics, hotels and more. Happy customers are guided to Google and unhappy customers reach you privately. SAR 2,500 per location per year including VAT, unlimited QR codes." />
+  <meta name="description" content="Review Finder by H&H Technology: QR review pages for restaurants, hospitals, clinics, hotels and more. Happy customers are guided to Google and unhappy customers reach you privately. From SAR 2,500 per location per year including VAT, unlimited QR codes." />
   <meta name="theme-color" content="#000212" />
   <meta property="og:title" content="Review Finder by H&H Technology" />
-  <meta property="og:description" content="For restaurants, hospitals, clinics, hotels and more. SAR 2,500 / location / year, incl. VAT." />
+  <meta property="og:description" content="For restaurants, hospitals, clinics, hotels and more. From SAR 2,500 / location / year, incl. VAT." />
   <link rel="icon" type="image/png" href="assets/brand/HH_Icon_Navy.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -222,7 +222,7 @@
     .price-main::after { content: ''; position: absolute; width: 380px; height: 380px; right: -140px; top: -160px; border-radius: 50%; background: radial-gradient(circle, rgba(76,92,240,.3), transparent 65%); pointer-events: none; }
     .plan { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; letter-spacing: .4px; color: #C9CEFF; background: rgba(76,92,240,.14); border: 1px solid rgba(76,92,240,.35); padding: 6px 12px; border-radius: 99px; }
     .amount { display: flex; align-items: baseline; gap: 10px; margin: 26px 0 6px; flex-wrap: wrap; }
-    .amount .cur { font-size: 22px; font-weight: 600; color: var(--body); }
+    .amount .from, .amount .cur { font-size: 22px; font-weight: 600; color: var(--body); }
     .amount .val { font-size: clamp(56px, 8vw, 80px); font-weight: 700; letter-spacing: -2px; line-height: 1; }
     .amount .per { font-size: 17px; color: var(--body); font-weight: 500; }
     .price-vat { display: inline-flex; margin: 0 0 14px; padding: 4px 10px; border-radius: 8px; background: rgba(61,214,140,.12); color: var(--ok); font-weight: 700; font-size: 13.5px; }
@@ -309,6 +309,9 @@
     html[dir="rtl"] .s-skip { margin-left: 0; margin-right: auto; }
     .amount, .s-dots { direction: ltr; }
     html[dir="rtl"] .amount { direction: rtl; }
+    html[dir="rtl"] .amount .val { order: 1; }
+    html[dir="rtl"] .amount .cur { order: 2; }
+    html[dir="rtl"] .amount .per { order: 3; }
 
     /* CX + Branch Intelligence: dashboard previews */
     .dash { background: var(--panel); border: 1px solid var(--line-2); border-radius: 24px; padding: 20px; display: grid; gap: 12px; min-width: 0; box-shadow: 0 40px 100px -40px rgba(76,92,240,.5); }
@@ -792,15 +795,15 @@
       <div class="wrap">
         <div class="sec-head reveal">
           <span class="kicker"><span data-i18n-html="lp.4">Pricing</span></span>
-          <h2><span data-i18n-html="lp.86">One simple price.<br /><em>Unlimited</em> QR codes.</span></h2>
-          <p><span data-i18n-html="lp.87">One price including VAT. No per-QR fees, no per-scan fees, no surprises.</span></p>
+          <h2><span data-i18n-html="lp.86">Simple yearly pricing.<br /><em>Unlimited</em> QR codes.</span></h2>
+          <p><span data-i18n-html="lp.87">All prices include VAT. No per-QR fees, no per-scan fees, no surprises.</span></p>
         </div>
         <div class="price-wrap reveal">
           <div class="price-main">
             <span class="plan"><span data-i18n-html="lp.88">Review Finder · Annual</span></span>
-            <div class="amount"><span class="cur"><span data-i18n-html="lp.89">SAR</span></span><span class="val">2,500</span><span class="per"><span data-i18n-html="lp.90">/ location / year</span></span></div>
+            <div class="amount"><span class="from"><span data-i18n-html="lp.from">From</span></span><span class="cur"><span data-i18n-html="lp.89">SAR</span></span><span class="val">2,500</span><span class="per"><span data-i18n-html="lp.90">/ location / year</span></span></div>
             <p class="price-vat"><span data-i18n-html="lp.91">Including 15% VAT</span></p>
-            <p class="price-sub"><span data-i18n-html="lp.92">Works out to about <b>SAR 208 a month</b>, all-in. Every counter, room, table and receipt.</span></p>
+            <p class="price-sub"><span data-i18n-html="lp.92">From about <b>SAR 208 a month</b>, all-in. Every counter, room, table and receipt.</span></p>
             <a class="btn btn-primary wa-link" href="#"><svg><use href="#i-wa"/></svg><span data-i18n-html="lp.93">Get started on WhatsApp</span></a>
             <p class="price-fine"><span data-i18n-html="lp.94">Already a customer? <a href="login.html">Log in to your dashboard</a></span></p>
           </div>
@@ -888,7 +891,7 @@
     <section class="cta-band reveal">
       <div class="cta-in">
         <h2><span data-i18n-html="lp.123">Ready for more 5-star reviews?</span></h2>
-        <p><span data-i18n-html="lp.124">Get Review Finder for your business for SAR 2,500 per location a year including VAT, with unlimited QR codes.</span></p>
+        <p><span data-i18n-html="lp.124">Get Review Finder for your business from SAR 2,500 per location a year including VAT, with unlimited QR codes.</span></p>
         <div class="cta-row">
           <a class="btn btn-primary wa-link" href="#"><svg><use href="#i-wa"/></svg><span data-i18n-html="lp.125">Talk to us on WhatsApp</span></a>
           <a class="btn btn-ghost" href="login.html"><svg><use href="#i-lock"/></svg><span data-i18n-html="lp.6">Login</span></a>
