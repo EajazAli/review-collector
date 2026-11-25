@@ -395,3 +395,45 @@ I18N.add({
     'ai.err.auth': 'يرجى تسجيل الدخول مجدداً.', 'ai.err.notfound': 'تعذّر العثور على هذا التقييم.', 'ai.err.engine': 'تعذّر الحصول على رد. حاول بعد قليل.',
   },
 });
+
+/* Topics found in reviews */
+I18N.add({
+  en: {
+    "a.mentions": "Mentions",
+    "a.mentions.tip": "Found from: {w}",
+    "a.mentions.picked": "Tapped by the customer",
+    "a.issues.top": "Most common complaints",
+    "a.topic.food": "Food",
+    "a.topic.service": "Speed of service",
+    "a.topic.staff": "Staff",
+    "a.topic.clean": "Cleanliness",
+    "a.topic.value": "Price and value",
+    "a.topic.room": "Room",
+    "a.topic.checkin": "Check-in / check-out",
+    "a.topic.wait": "Waiting time",
+    "a.topic.doctor": "Doctor",
+    "a.topic.billing": "Billing / insurance",
+    "a.topic.booking": "Appointments",
+    "a.topic.result": "Result",
+    "a.topic.stock": "Product availability"
+  },
+  ar: {
+    "a.mentions": "يذكر",
+    "a.mentions.tip": "من الكلمات: {w}",
+    "a.mentions.picked": "اختارها العميل",
+    "a.issues.top": "أكثر الشكاوى تكراراً",
+    "a.topic.food": "الطعام",
+    "a.topic.service": "سرعة الخدمة",
+    "a.topic.staff": "الموظفون",
+    "a.topic.clean": "النظافة",
+    "a.topic.value": "السعر والقيمة",
+    "a.topic.room": "الغرفة",
+    "a.topic.checkin": "تسجيل الدخول والخروج",
+    "a.topic.wait": "وقت الانتظار",
+    "a.topic.doctor": "الطبيب",
+    "a.topic.billing": "الفواتير والتأمين",
+    "a.topic.booking": "المواعيد",
+    "a.topic.result": "النتيجة",
+    "a.topic.stock": "توفر المنتجات"
+  },
+});

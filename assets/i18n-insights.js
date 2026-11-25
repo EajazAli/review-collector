@@ -129,3 +129,23 @@ I18N.add({
     'ins.ai.note': 'كتبه الذكاء الاصطناعي من تقييماتك. راجعه قبل اتخاذ أي إجراء.',
   },
 });
+
+/* Topics found in reviews */
+I18N.add({
+  en: {
+    "ins.c.mentions": "What reviews mention",
+    "ins.c.mentionsSub": "Topics found in {n} reviews, from what customers tapped and wrote. Each topic counts once per review.",
+    "ins.praise": "Praised",
+    "ins.complaint": "Complaints",
+    "ins.tip.mention": "{t}: praised in {p} reviews, complaints in {n}",
+    "ins.c.driversSub": "Share of complaints that mention each issue, tapped or written · average rating when it comes up"
+  },
+  ar: {
+    "ins.c.mentions": "ماذا تذكر التقييمات",
+    "ins.c.mentionsSub": "مواضيع وردت في {n} تقييم، مما اختاره العملاء وكتبوه. يُحسب كل موضوع مرة واحدة لكل تقييم.",
+    "ins.praise": "مدح",
+    "ins.complaint": "شكاوى",
+    "ins.tip.mention": "{t}: مدح في {p} تقييم، وشكوى في {n}",
+    "ins.c.driversSub": "نسبة الشكاوى التي تذكر كل مشكلة، باختيارها أو بكتابتها · متوسط التقييم عند ذكرها"
+  },
+});

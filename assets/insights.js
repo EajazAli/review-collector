@@ -29,6 +29,13 @@ const RFInsights = (() => {
   const LEGACY = /^\[((?:food|service|staff|clean|value)(?:,\s*(?:food|service|staff|clean|value))*)\]\s*/;
   const issuesOf = (r) => (r.issues?.length ? r.issues : ((r.text || '').match(LEGACY)?.[1].split(/,\s*/) || []));
   const textOf = (r) => (r.text || '').replace(LEGACY, '');
+  // Topics per review (tapped issues + keywords in the text), each counted once per review.
+  const topicMemo = new WeakMap();
+  const topicsOf = (r) => {
+    if (!topicMemo.has(r)) topicMemo.set(r, RFTopics.forReview(textOf(r), issuesOf(r), RC.issuesFor({ businessType: typeOf(r.business_id) }), r.rating));
+    return topicMemo.get(r);
+  };
+  const complaintsOf = (r) => topicsOf(r).filter((t) => t.pol === 'neg').map((t) => t.k);
   const typeOf = (id) => bizList.find((b) => b.id === id)?.businessType || 'restaurant';
   const nameOf = (id) => { const b = bizList.find((x) => x.id === id); return b ? (RC.displayName(b, I18N.lang) || b.slug) : ''; };
   const groupIdOf = (id) => bizList.find((b) => b.id === id)?.groupId || '';
@@ -176,7 +183,7 @@ const RFInsights = (() => {
     const inView = state.biz === 'all' ? scope : scope.filter((b) => b.id === state.biz);
     const viewTypes = TYPES.filter((t) => inView.some((b) => (b.businessType || 'restaurant') === t));
     const ofType = (rows, t) => rows.filter((r) => typeOf(r.business_id) === t);
-    const namesIssue = (rows, k) => rows.filter((r) => issuesOf(r).includes(k));
+    const namesIssue = (rows, k) => rows.filter((r) => complaintsOf(r).includes(k));
     // The type's own list, plus anything older in the data (for example if a business changed type)
     const keysFor = (t, rows) => [...new Set([...RC.issuesFor({ businessType: t }), ...ISSUES.filter((k) => namesIssue(rows, k).length)])];
     // Group view: a group was picked, or every business this login sees belongs to the same group.
@@ -260,7 +267,7 @@ const RFInsights = (() => {
     const distHtml = `<div class="card"><h3>${tr('ins.c.dist')}</h3>${bars(dist, { tip: (i) => tr('ins.tip.dist', { l: i.label, n: num(i.value), p: pct((100 * i.value) / cur.length) }), fmt: (v) => `${num(v)} · ${pct((100 * v) / cur.length)}` })}</div>`;
 
     // Issue drivers: frequency + rating when present
-    const withIssues = cur.filter((r) => issuesOf(r).length);
+    const withIssues = cur.filter((r) => complaintsOf(r).length);
     const driverCard = (t) => {
       const rows = ofType(withIssues, t);
       const drivers = keysFor(t, rows).map((k) => { const hit = namesIssue(rows, k); return { k, n: hit.length, avg: avg(hit) }; }).filter((d) => d.n).sort((a, b) => b.n - a.n);
@@ -269,6 +276,25 @@ const RFInsights = (() => {
     };
     const typesWithIssues = viewTypes.filter((t) => ofType(withIssues, t).length);
     const driverHtml = (typesWithIssues.length ? typesWithIssues : [viewTypes.length === 1 ? viewTypes[0] : 'other']).map(driverCard).join('');
+
+    // What reviews mention: for each topic, how many reviews praise it and how many complain
+    const mentionCard = (t) => {
+      const rows = ofType(cur, t).filter((r) => topicsOf(r).length);
+      if (!rows.length) return '';
+      const items = keysFor(t, rows).map((k) => {
+        const hit = rows.map((r) => topicsOf(r).find((x) => x.k === k)).filter(Boolean);
+        return { k, p: hit.filter((x) => x.pol === 'pos').length, n: hit.filter((x) => x.pol === 'neg').length };
+      }).filter((x) => x.p + x.n).sort((a, b) => (b.p + b.n) - (a.p + a.n));
+      if (!items.length) return '';
+      const m = Math.max(1, ...items.map((x) => Math.max(x.p, x.n)));
+      return `<div class="card"><h3>${tr('ins.c.mentions')}${viewTypes.length > 1 ? ` · ${tr(`a.type.${t}`)}` : ''}</h3><p class="muted small">${tr('ins.c.mentionsSub', { n: num(rows.length) })}</p>
+        <div class="ix-mix"><span></span><span class="ix-mh">👍 ${tr('ins.praise')}</span><span class="ix-mh">👎 ${tr('ins.complaint')}</span>
+        ${items.map((x) => { const tip = esc(tr('ins.tip.mention', { t: tr(`a.topic.${x.k}`), p: num(x.p), n: num(x.n) })); return `<span class="ix-ml" data-tip="${tip}">${ISSUE_ICON[x.k] || ''} ${tr(`a.topic.${x.k}`)}</span>
+          <span class="ix-mc pos" data-tip="${tip}"><i style="width:${(100 * x.p) / m}%"></i><b>${num(x.p)}</b></span>
+          <span class="ix-mc neg" data-tip="${tip}"><i style="width:${(100 * x.n) / m}%"></i><b>${num(x.n)}</b></span>`; }).join('')}</div></div>`;
+    };
+    const mentionCards = viewTypes.map(mentionCard).filter(Boolean);
+    const mentionHtml = mentionCards.length ? `<div class="ix-grid2">${mentionCards.join('')}</div>` : '';
 
     // CSAT by business type (portfolio) or benchmark (owner)
     let segHtml = '';
@@ -309,7 +335,7 @@ const RFInsights = (() => {
       const rows = scope.map((bz) => {
         const c = cur.filter((r) => r.business_id === bz.id), p = prev.filter((r) => r.business_id === bz.id);
         const pr = c.filter((r) => r.route === 'private');
-        const ti = ISSUES.map((k) => [k, pr.filter((r) => issuesOf(r).includes(k)).length]).sort((a, z) => z[1] - a[1])[0];
+        const ti = ISSUES.map((k) => [k, pr.filter((r) => complaintsOf(r).includes(k)).length]).sort((a, z) => z[1] - a[1])[0];
         return { bz, n: c.length, csat: csat(c), d: c.length && p.length ? csat(c) - csat(p) : null, open: pr.filter((r) => r.status !== 'resolved').length, won: wonBack(pr.filter((r) => r.guest_verdict)), top: ti && ti[1] ? ti[0] : null };
       }).filter((r) => r.n);
       const key = { csat: (r) => r.csat ?? -1, n: (r) => r.n, open: (r) => r.open, d: (r) => r.d ?? -999, won: (r) => r.won ?? -1 }[state.sort] || ((r) => r.csat);
@@ -376,6 +402,7 @@ const RFInsights = (() => {
 
     root.innerHTML = filters + alertsHtml + aiHtml + kpis + trend
       + `<div class="ix-grid2">${driverHtml}${distHtml}</div>`
+      + mentionHtml
       + `<div class="ix-grid2">${segHtml}${themeHtml}</div>`
       + groupsHtml + boardHtml + heatBizHtml + `<div class="ix-grid2">${recHtml}${shoutHtml}</div>` + `<div class="ix-grid2">${whenHtml}${langHtml}</div>`
       + `<p class="muted small ix-foot">${tr('ins.foot')}</p>`;
@@ -436,8 +463,8 @@ const RFInsights = (() => {
   function csv() {
     const { cur } = periods();
     const q = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
-    const head = ['date', 'group', 'business', 'type', 'rating', 'route', 'issues', 'status', 'resolved_at', 'language', 'text', 'reply', 'guest_says', 'recommend', 'shoutout', 'assigned_to', 'due_at'];
-    const lines = cur.map((r) => [r.created_at, gName(groupById(groupIdOf(r.business_id))), nameOf(r.business_id), typeOf(r.business_id), r.rating, r.route, issuesOf(r).join('|'), r.status, r.resolved_at || '', r.lang || '', textOf(r), r.reply || '', r.guest_verdict || '', r.recommend || '', r.shoutout || '', r.assigned_to || '', r.due_at || ''].map(q).join(','));
+    const head = ['date', 'group', 'business', 'type', 'rating', 'route', 'issues', 'praised', 'complaints', 'status', 'resolved_at', 'language', 'text', 'reply', 'guest_says', 'recommend', 'shoutout', 'assigned_to', 'due_at'];
+    const lines = cur.map((r) => [r.created_at, gName(groupById(groupIdOf(r.business_id))), nameOf(r.business_id), typeOf(r.business_id), r.rating, r.route, issuesOf(r).join('|'), topicsOf(r).filter((t) => t.pol === 'pos').map((t) => t.k).join('|'), complaintsOf(r).join('|'), r.status, r.resolved_at || '', r.lang || '', textOf(r), r.reply || '', r.guest_verdict || '', r.recommend || '', r.shoutout || '', r.assigned_to || '', r.due_at || ''].map(q).join(','));
     const blob = new Blob(['﻿' + [head.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `review-finder-cx-${new Date().toISOString().slice(0, 10)}.csv` });
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);

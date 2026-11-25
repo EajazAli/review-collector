@@ -500,3 +500,22 @@ select[name="businessType"]:disabled { opacity: .65; cursor: not-allowed; }
 .ix-ai-top .small { margin: 0 !important; }
 .ix-ai-text { margin-top: 14px; white-space: pre-wrap; line-height: 1.6; font-size: 14.5px; }
 .ix-ai-note { margin: 10px 0 0 !important; }
+
+/* Topics found in a review */
+.fb-ml { font-size: 12px; font-weight: 700; color: var(--muted); align-self: center; margin-inline-end: 2px; }
+.tag.topic { font-size: 12.5px; padding: 4px 10px; cursor: help; }
+.tag.topic.pos { background: #E7F6EC; color: #0B6B2E; }
+.tag.topic.neg { background: #FDECEA; color: #A8231A; }
+.tag.topic.neu { background: var(--bg); color: var(--text); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag.topic.pos { background: #15301F; color: #6CE9A6; } :root:not([data-theme="light"]) .tag.topic.neg { background: #3B1C1A; color: #F97066; } }
+:root[data-theme="dark"] .tag.topic.pos { background: #15301F; color: #6CE9A6; }
+:root[data-theme="dark"] .tag.topic.neg { background: #3B1C1A; color: #F97066; }
+/* What reviews mention: praise vs complaints per topic */
+.ix-mix { display: grid; grid-template-columns: minmax(110px, 40%) 1fr 1fr; gap: 6px 12px; align-items: center; font-size: 13.5px; }
+.ix-mh { font-size: 12px; font-weight: 700; color: var(--muted); }
+.ix-ml { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ix-mc { position: relative; height: 22px; border-radius: 6px; background: var(--ix-track); display: flex; align-items: center; overflow: hidden; }
+.ix-mc i { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: 6px; }
+.ix-mc.pos i { background: #3DAE6E; }
+.ix-mc.neg i { background: #E5604F; }
+.ix-mc b { position: relative; padding-inline-start: 8px; font-size: 12.5px; font-variant-numeric: tabular-nums; }

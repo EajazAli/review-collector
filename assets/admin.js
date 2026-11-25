@@ -12,6 +12,21 @@
   const LEGACY = /^\[((?:food|service|staff|clean|value)(?:,\s*(?:food|service|staff|clean|value))*)\]\s*/;
   const issuesOf = (r) => (r.issues?.length ? r.issues : ((r.text || '').match(LEGACY)?.[1].split(/,\s*/) || []));
   const textOf = (r) => (r.text || '').replace(LEGACY, '');
+  // Topics in the review: what the customer tapped plus what they wrote, each counted once.
+  const topicMemo = new WeakMap();
+  const topicsOf = (r) => {
+    if (!topicMemo.has(r)) {
+      const b = list.find((x) => x.id === r.business_id);
+      topicMemo.set(r, RFTopics.forReview(textOf(r), issuesOf(r), RC.issuesFor(b), r.rating));
+    }
+    return topicMemo.get(r);
+  };
+  const POL_ICON = { pos: '👍', neg: '👎', neu: '•' };
+  const topicChips = (r) => {
+    const t = topicsOf(r);
+    if (!t.length) return '';
+    return `<div class="fb-issues"><span class="fb-ml">${tr('a.mentions')}</span>${t.map((x) => `<span class="tag topic ${x.pol}" title="${RC.esc(x.picked ? tr('a.mentions.picked') : tr('a.mentions.tip', { w: x.words.join(', ') }))}">${POL_ICON[x.pol]} ${tr(`a.topic.${x.k}`)}</span>`).join('')}</div>`;
+  };
 
   let user = null;        // { email, isAdmin }
   let list = [];          // businesses this login can manage
@@ -420,13 +435,14 @@
 
     const scoped = reviews.filter((r) => fb.value === 'all' || r.business_id === fb.value);
     const priv = scoped.filter((r) => r.route === 'private');
-    // Most common issues among private feedback
+    // Most common complaints, tapped or written, in any review; each counted once per review
     const counts = Object.fromEntries(ISSUE_KEYS.map((k) => [k, 0]));
-    priv.forEach((r) => issuesOf(r).forEach((k) => counts[k]++));
+    const complaining = scoped.filter((r) => topicsOf(r).some((t) => t.pol === 'neg'));
+    complaining.forEach((r) => topicsOf(r).forEach((t) => { if (t.pol === 'neg' && t.k in counts) counts[t.k]++; }));
     const ranked = ISSUE_KEYS.filter((k) => counts[k]).sort((a, b) => counts[b] - counts[a]);
     $('issueStats').hidden = !ranked.length;
     $('issueStats').innerHTML = ranked.length ? `<span class="is-title">${tr('a.issues.top')}</span>` + ranked.map((k) => {
-      const pct = Math.round((counts[k] / Math.max(1, priv.length)) * 100);
+      const pct = Math.round((counts[k] / Math.max(1, complaining.length)) * 100);
       return `<div class="is-row"><span class="is-label">${ISSUE_ICON[k]} ${tr(`a.issue.${k}`)}</span><span class="is-bar"><i style="width:${pct}%"></i></span><b>${num(counts[k])}</b></div>`;
     }).join('') : '';
     const avg = scoped.length ? (scoped.reduce((s, r) => s + r.rating, 0) / scoped.length).toFixed(1) : '–';
@@ -456,7 +472,7 @@
           ${r.guest_verdict ? `<span class="tag verdict ${r.guest_verdict}">${r.guest_verdict === 'fixed' ? '👍' : '👎'} ${tr(`a.fu.v.${r.guest_verdict}`)}</span>` : ''}
           <time>${I18N.fmtDate(r.created_at)}</time>
         </div>
-        ${issuesOf(r).length ? `<div class="fb-issues">${issuesOf(r).map((k) => `<span class="tag issue">${ISSUE_ICON[k]} ${tr(`a.issue.${k}`)}</span>`).join('')}</div>` : ''}
+        ${topicChips(r)}
         ${textOf(r) ? `<p dir="auto">${RC.esc(textOf(r))}</p>` : (issuesOf(r).length ? '' : `<p class="muted">${tr('a.noComment')}</p>`)}
         ${r.images?.length ? `<div class="fb-imgs">${r.images.map((p) => photoLinks[p] ? `<img src="${RC.esc(photoLinks[p])}" alt="Guest photo">` : '').join('')}</div>` : ''}
         ${r.route === 'google' ? `<div class="fb-foot">
