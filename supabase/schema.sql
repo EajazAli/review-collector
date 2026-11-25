@@ -168,3 +168,12 @@ alter table public.businesses add column if not exists booking_url text not null
 -- Guest follow-up page, owner replies, "Did we fix it?" (also in 007_follow_up.sql)
 -- Groups with multiple branches, group logins, group analytics (also in 008_groups.sql)
 -- Industry issues, recommend question, staff shout-outs, complaint deadlines (also in 009_cases_recommend_shoutouts.sql)
+
+-- Business category for the area benchmark (also in 010_sub_type.sql)
+
+alter table public.businesses add column if not exists sub_type text not null default '';
+
+do $$ begin
+  alter table public.businesses add constraint businesses_sub_type_check
+    check (sub_type = '' or sub_type ~ '^[a-z_]{3,40}$');
+exception when duplicate_object then null; end $$;

@@ -208,7 +208,7 @@
     } else if (n === 'staffList') {
       draft.staff = v.split('\n');
     } else if (n === 'businessType') {
-      draft.businessType = v; renderTypeHint();
+      draft.businessType = v; if (!(RC.SUB_TYPES[v] || []).includes(draft.subType)) draft.subType = ''; renderTypeHint();
     } else if (n.startsWith('social_')) {
       draft.social[n.slice(7)] = v.trim();
     } else {
@@ -267,7 +267,14 @@
     window.open(url, '_blank', 'noopener');
   });
 
+  // Category inside the type (seafood restaurant, dental clinic...), used by the area comparison
+  function renderSubTypes() {
+    const t = draft.businessType || 'restaurant';
+    form.subType.innerHTML = `<option value="">${tr('a.sub.same')}</option>` + (RC.SUB_TYPES[t] || []).map((k) => `<option value="${k}">${tr(`a.sub.${k}`)}</option>`).join('');
+    form.subType.value = draft.subType || '';
+  }
   function renderTypeHint() {
+    renderSubTypes();
     const list = RC.issuesFor(draft).map((k) => tr(`a.issue.${k}`)).join(I18N.lang === 'ar' ? '، ' : ', ');
     $('typeHint').textContent = tr('a.type.hintIssues', { list }) + (RC.usesBooking(draft) ? ` ${tr('a.type.hintBooking')}` : '');
     $('bkField').hidden = !RC.usesBooking(draft);

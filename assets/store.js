@@ -40,6 +40,8 @@ const RC = (() => {
     other: ['wait', 'staff', 'clean', 'value'],
   };
   const ISSUE_KEYS = [...new Set(Object.values(ISSUES_BY_TYPE).flat())];
+  // Categories inside each type, used to find similar businesses nearby. Values are Google Maps place types.
+  const SUB_TYPES = {"restaurant":["restaurant","cafe","coffee_shop","fast_food_restaurant","hamburger_restaurant","pizza_restaurant","seafood_restaurant","middle_eastern_restaurant","lebanese_restaurant","turkish_restaurant","indian_restaurant","italian_restaurant","chinese_restaurant","japanese_restaurant","steak_house","breakfast_restaurant","fine_dining_restaurant","bakery","dessert_shop","ice_cream_shop"],"hotel":["hotel","resort_hotel","lodging"],"salon":["beauty_salon","hair_salon","barber_shop","nail_salon","spa"],"clinic":["hospital","doctor","dental_clinic","dentist","skin_care_clinic","physiotherapist","medical_lab"],"retail":["clothing_store","shoe_store","jewelry_store","electronics_store","supermarket","grocery_store","furniture_store","book_store","pet_store","sporting_goods_store","gift_shop","department_store","shopping_mall"],"other":["gym","car_wash","car_repair","laundry","pharmacy"]};
   const ISSUE_ICON = { food: '🍽️', service: '⏱️', staff: '🙋', clean: '🧹', value: '💸', room: '🛏️', checkin: '🛎️', wait: '⏳', doctor: '🩺', billing: '🧾', booking: '📅', result: '✨', stock: '📦' };
   const issuesFor = (b) => ISSUES_BY_TYPE[b?.businessType] || ISSUES_BY_TYPE.restaurant;
   // Hotels also get Booking.com help (guests: how to review there; owners: reply in the Extranet).
@@ -74,7 +76,7 @@ const RC = (() => {
 
   // ---------- Row mapping ----------
   const fromRow = (r) => ({
-    id: r.id, slug: r.slug, name: r.name, tagline: r.tagline, nameAr: r.name_ar || '', taglineAr: r.tagline_ar || '', businessType: r.business_type || 'restaurant', bookingUrl: r.booking_url || '', logo: r.logo,
+    id: r.id, slug: r.slug, name: r.name, tagline: r.tagline, nameAr: r.name_ar || '', taglineAr: r.tagline_ar || '', businessType: r.business_type || 'restaurant', subType: r.sub_type || '', bookingUrl: r.booking_url || '', logo: r.logo,
     theme: { ...THEMES.sunset, ...(r.theme || {}) }, threshold: r.threshold,
     googleReviewUrl: r.google_review_url, whatsapp: [...(r.whatsapp || []), '', ''].slice(0, 2),
     webhookUrl: r.webhook_url, social: { ...EMPTY_SOCIAL, ...(r.social || {}) },
@@ -83,13 +85,14 @@ const RC = (() => {
     createdAt: r.created_at, updatedAt: r.updated_at,
   });
   const toRow = (b) => ({
-    slug: b.slug, name: b.name || '', tagline: b.tagline || '', name_ar: b.nameAr || '', tagline_ar: b.taglineAr || '', business_type: b.businessType || 'restaurant', booking_url: (b.bookingUrl || '').trim(), logo: b.logo || '',
+    slug: b.slug, name: b.name || '', tagline: b.tagline || '', name_ar: b.nameAr || '', tagline_ar: b.taglineAr || '', business_type: b.businessType || 'restaurant', sub_type: (RC_SUB_OK(b) ? b.subType : '') || '', booking_url: (b.bookingUrl || '').trim(), logo: b.logo || '',
     theme: b.theme || {}, threshold: +b.threshold || 4,
     google_review_url: b.googleReviewUrl || '', whatsapp: (b.whatsapp || ['', '']).map((x) => (x || '').trim()),
     webhook_url: b.webhookUrl || '', social: b.social || {},
     staff: (b.staff || []).map((x) => x.trim()).filter(Boolean).slice(0, 50),
     group_id: b.groupId || null, branch_name: (b.branchName || '').trim(), branch_name_ar: (b.branchNameAr || '').trim(),
   });
+  function RC_SUB_OK(b) { return !!b.subType && (SUB_TYPES[b.businessType || 'restaurant'] || []).includes(b.subType); }
   const fail = (error) => { if (error) throw new Error(error.message || String(error)); };
 
   // ---------- Auth ----------
@@ -319,6 +322,14 @@ const RC = (() => {
     } catch { return { error: 'off' }; }
   }
 
+  // Similar businesses nearby on Google Maps (supabase/functions/area-benchmark). Returns data or { error }.
+  async function areaBenchmark(payload) {
+    try {
+      const { data, error } = await sb.functions.invoke('area-benchmark', { body: payload });
+      return error ? { error: 'off' } : data;
+    } catch { return { error: 'off' }; }
+  }
+
   // Anonymous averages per business type (needs supabase/006_cx_insights.sql; empty if not run yet).
   async function cxBenchmarks(since) {
     const { data, error } = await sb.rpc('cx_benchmarks', { since });
@@ -438,10 +449,10 @@ const RC = (() => {
   };
 
   return {
-    configured, sb, BUSINESS_TYPES, ISSUE_KEYS, ISSUE_ICON, issuesFor, usesBooking, BOOKING_TRIPS_URL, BOOKING_EXTRANET_URL, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
+    configured, sb, BUSINESS_TYPES, SUB_TYPES, ISSUE_KEYS, ISSUE_ICON, issuesFor, usesBooking, BOOKING_TRIPS_URL, BOOKING_EXTRANET_URL, THEMES, SOCIAL, uid, uuid, slugify, newBusiness,
     session, signIn, signOut, updatePassword, me,
     fetchPublished, listBusinesses, getBusiness, createBusiness, saveBusiness, deleteBusiness, importBusinesses,
-    listMembers, setMembers, submitReview, listReviews, cxBenchmarks, aiAssist, getTicket, rateTicket, updateReview, photoUrls,
+    listMembers, setMembers, submitReview, listReviews, cxBenchmarks, aiAssist, areaBenchmark, getTicket, rateTicket, updateReview, photoUrls,
     listGroups, createGroup, listGroupMembers, setGroupMembers,
     localName, groupName, branchName, displayName, localTagline, googleLink, GOOGLE_REPLY_URL, googleReviewsUrl, siteBase, reviewUrl, statusUrl, settings, saveSettings, deliver, waLink, resizeImage, initials, esc,
   };

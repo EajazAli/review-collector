@@ -22,6 +22,8 @@ const RFInsights = (() => {
   let groupList = [];   // groups (brands) those businesses belong to
   let viewGroup = null; // the group being shown as a whole, if any
   let aiNote = { key: '', text: '', busy: false }; // last AI summary, kept for the same filters
+  let area = { radius: 1500, category: null, busy: false, results: new Map() }; // area benchmark, per business + settings
+  let areaBiz = null; // the one business the area card is about
   let bench = [];
   let root = null;
 
@@ -296,6 +298,10 @@ const RFInsights = (() => {
     const mentionCards = viewTypes.map(mentionCard).filter(Boolean);
     const mentionHtml = mentionCards.length ? `<div class="ix-grid2">${mentionCards.join('')}</div>` : '';
 
+    // How you compare nearby: similar businesses on Google Maps (needs one business in view)
+    areaBiz = inView.length === 1 ? inView[0] : null;
+    const areaHtml = areaCard(areaBiz, multi);
+
     // CSAT by business type (portfolio) or benchmark (owner)
     let segHtml = '';
     const typesInScope = typesPresent.filter((t) => scope.some((b) => (b.businessType || 'restaurant') === t));
@@ -402,7 +408,7 @@ const RFInsights = (() => {
 
     root.innerHTML = filters + alertsHtml + aiHtml + kpis + trend
       + `<div class="ix-grid2">${driverHtml}${distHtml}</div>`
-      + mentionHtml
+      + mentionHtml + areaHtml
       + `<div class="ix-grid2">${segHtml}${themeHtml}</div>`
       + groupsHtml + boardHtml + heatBizHtml + `<div class="ix-grid2">${recHtml}${shoutHtml}</div>` + `<div class="ix-grid2">${whenHtml}${langHtml}</div>`
       + `<p class="muted small ix-foot">${tr('ins.foot')}</p>`;
@@ -426,8 +432,11 @@ const RFInsights = (() => {
       const g = e.target.closest('[data-group]'); if (g) { state.group = g.dataset.group; state.biz = 'all'; draw(); root.scrollIntoView({ behavior: 'smooth' }); return; }
       if (e.target.closest('[data-act="csv"]')) csv();
       if (e.target.closest('[data-act="ai"]')) aiSummary();
+      if (e.target.closest('[data-act="area"]')) areaRun();
     });
     el.addEventListener('change', (e) => {
+      const ak = e.target.dataset.area;
+      if (ak) { area[ak] = ak === 'radius' ? +e.target.value : e.target.value; draw(); return; }
       const f = e.target.dataset.f; if (!f) return;
       if (f === 'sample') { state.sample = e.target.checked; state.biz = 'all'; state.type = 'all'; state.group = 'all'; render(); return; }
       state[f] = e.target.value; if (f === 'type' || f === 'group') state.biz = 'all'; draw();
@@ -459,6 +468,101 @@ const RFInsights = (() => {
     draw();
   }
   const showAiError = (code) => ctx.toast?.(tr(`ai.err.${code || 'engine'}`));
+
+  // ---------- Area benchmark ----------
+  // The category in use: the one picked in the card if it fits this business's type, else the saved one
+  const areaCat = (b) => { const c = area.category ?? b.subType ?? ''; return (RC.SUB_TYPES[b.businessType || 'restaurant'] || []).includes(c) ? c : ''; };
+  const areaKey = (b) => [b.id, area.radius, areaCat(b), I18N.lang].join('|');
+  const distTxt = (m) => (m == null ? '' : m < 1000 ? tr('ins.area.m', { n: num(Math.round(m / 10) * 10) }) : tr('ins.area.km', { n: num(+(m / 1000).toFixed(1)) }));
+  const stars = (v) => (v == null ? '–' : `${num(+v.toFixed(1))}★`);
+  function band(d) {
+    if (d == null) return null;
+    if (d >= 0.2) return ['above', '▲'];
+    if (d > -0.2) return ['par', '●'];
+    if (d > -0.5) return ['close', '▼'];
+    return ['below', '▼'];
+  }
+  function areaCard(b, multi) {
+    if (!b) return multi ? `<div class="card ix-area"><h3>📍 ${tr('ins.area.t')}</h3><p class="muted small">${tr('ins.area.pick')}</p></div>` : '';
+    const t = b.businessType || 'restaurant';
+    const cat = areaCat(b);
+    const res = area.results.get(areaKey(b));
+    const controls = `<div class="ix-area-ctl">
+        <label><span>${tr('ins.area.cat')}</span><select data-area="category"><option value="">${tr('a.sub.same')}</option>${(RC.SUB_TYPES[t] || []).map((k) => `<option value="${k}" ${cat === k ? 'selected' : ''}>${tr(`a.sub.${k}`)}</option>`).join('')}</select></label>
+        <label><span>${tr('ins.area.radius')}</span><select data-area="radius">${[500, 1000, 1500, 3000, 5000].map((m) => `<option value="${m}" ${area.radius === m ? 'selected' : ''}>${distTxt(m)}</option>`).join('')}</select></label>
+        <button type="button" class="btn primary" data-act="area" ${area.busy ? 'disabled' : ''}>${tr(area.busy ? 'ins.area.busy' : res?.places ? 'ins.area.again' : 'ins.area.go')}</button>
+      </div>`;
+    let body = '';
+    if (res?.error) body = `<p class="ix-empty">${tr(`area.err.${res.error}`)}</p>`;
+    else if (res?.places) body = areaResult(b, res);
+    return `<div class="card ix-area"><h3>📍 ${tr('ins.area.t')}</h3><p class="muted small">${tr('ins.area.x', { name: esc(label(b)) })}</p>${controls}
+      ${state.sample ? `<p class="ix-banner">${tr('ins.area.sample')}</p>` : ''}${body}</div>`;
+  }
+  function areaResult(b, res) {
+    const rated = res.places.filter((p) => p.rating != null && p.count > 0);
+    if (!rated.length) return `<p class="ix-empty">${tr('ins.area.none', { d: distTxt(res.radius) })}</p>`;
+    const mean = rated.reduce((s, p) => s + p.rating, 0) / rated.length;
+    const mine = res.me.rating;
+    const diff = mine == null ? null : mine - mean;
+    const bd = band(diff);
+    const all = [...rated.map((p) => ({ ...p, you: false })), ...(mine != null ? [{ name: res.me.name, rating: mine, count: res.me.count, distance: 0, you: true }] : [])]
+      .sort((a, z) => z.rating - a.rating || z.count - a.count);
+    const rank = all.findIndex((p) => p.you) + 1;
+    const tiles = `<div class="ix-area-tiles">
+        <div class="ix-at"><span>${tr('ins.area.you')}</span><b>${stars(mine)}</b><small>${tr('ins.area.reviews', { n: num(res.me.count || 0) })}</small></div>
+        <div class="ix-at"><span>${tr('ins.area.avg')}</span><b>${stars(mean)}</b><small>${tr('ins.area.avgHint', { n: num(rated.length), d: distTxt(res.radius) })}</small></div>
+        <div class="ix-at"><span>${tr('ins.area.diff')}</span><b class="ix-band ${bd ? bd[0] : ''}">${diff == null ? '–' : `${diff >= 0 ? '+' : '−'}${num(+Math.abs(diff).toFixed(1))}`}</b><small>${bd ? `<span class="ix-band ${bd[0]}">${bd[1]} ${tr(`ins.area.${bd[0]}`)}</span>` : ''}</small></div>
+        <div class="ix-at"><span>${tr('ins.area.rank')}</span><b>${rank ? `#${num(rank)}` : '–'}</b><small>${tr('ins.area.rankOf', { n: num(all.length) })}</small></div>
+      </div>`;
+    const shown = all.slice(0, 15);
+    if (rank > 15) shown.push(all[rank - 1]);
+    const list = `<h4 class="ix-area-h">${tr('ins.area.list')}</h4><p class="muted small">${tr('ins.area.listSub')}</p>
+      <div class="ix-bars ix-area-list">${shown.map((p) => `
+        <div class="ix-bar${p.you ? ' you' : ''}" data-tip="${esc(`${p.name}: ${stars(p.rating)} · ${tr('ins.area.reviews', { n: num(p.count) })}${p.you ? '' : ` · ${distTxt(p.distance)}`}`)}">
+          <span class="ix-bl">${p.you ? `<b>${tr('ins.area.youTag')}</b> · ` : ''}${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}</a>` : esc(p.name)}${p.you ? '' : ` <small>· ${distTxt(p.distance)}</small>`}</span>
+          <span class="ix-bt"><i style="width:${(100 * p.rating) / 5}%"></i></span>
+          <span class="ix-bv">${stars(p.rating)}<small> · ${num(p.count)}</small></span>
+        </div>`).join('')}</div>`;
+    // What customers of nearby businesses mention (topics in the reviews Google shares)
+    const keys = RC.issuesFor(b);
+    const revs = res.places.flatMap((p) => p.reviews || []).filter((r) => r.text);
+    const found = revs.map((r) => RFTopics.analyze(r.text, keys, r.rating));
+    const items = keys.map((k) => {
+      const hit = found.map((f) => f.find((x) => x.k === k)).filter(Boolean);
+      return { k, p: hit.filter((x) => x.pol === 'pos').length, n: hit.filter((x) => x.pol === 'neg').length };
+    }).filter((x) => x.p + x.n).sort((a, z) => (z.p + z.n) - (a.p + a.n));
+    const m = Math.max(1, ...items.map((x) => Math.max(x.p, x.n)));
+    const mentions = items.length ? `<h4 class="ix-area-h">${tr('ins.area.mentions')}</h4><p class="muted small">${tr('ins.area.mentionsSub', { n: num(revs.length) })}</p>
+      <div class="ix-mix"><span></span><span class="ix-mh">👍 ${tr('ins.praise')}</span><span class="ix-mh">👎 ${tr('ins.complaint')}</span>
+      ${items.map((x) => { const tip = esc(tr('ins.tip.mention', { t: tr(`a.topic.${x.k}`), p: num(x.p), n: num(x.n) })); return `<span class="ix-ml" data-tip="${tip}">${ISSUE_ICON[x.k] || ''} ${tr(`a.topic.${x.k}`)}</span>
+        <span class="ix-mc pos" data-tip="${tip}"><i style="width:${(100 * x.p) / m}%"></i><b>${num(x.p)}</b></span>
+        <span class="ix-mc neg" data-tip="${tip}"><i style="width:${(100 * x.n) / m}%"></i><b>${num(x.n)}</b></span>`; }).join('')}</div>` : '';
+    return tiles + list + mentions + `<p class="muted small ix-area-src">${tr('ins.area.src')}</p>`;
+  }
+  async function areaRun() {
+    const b = areaBiz;
+    if (!b || area.busy) return;
+    const key = areaKey(b);
+    area.busy = true; draw();
+    const res = state.sample ? areaSample(b) : await RC.areaBenchmark({ business_id: b.id, radius: area.radius, category: areaCat(b), lang: I18N.lang });
+    area.results.set(key, res || { error: 'engine' });
+    area.busy = false; draw();
+  }
+  // Made-up nearby businesses for the Sample data preview
+  function areaSample(b) {
+    let seed = 11 + b.id.length; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const pick = (a) => a[Math.floor(rnd() * a.length)];
+    const names = { restaurant: ['Corniche Grill', 'Red Sea Fish', 'Spice Lane', 'Sultan Kitchen', 'Harbour Bites', 'Golden Kabsa', 'Nakheel Diner', 'Pearl Seafood', 'Sahara Shawarma', 'Blue Wave Café', 'Olive Tree', 'Marina Burgers', 'Dune Steak', 'Saffron House'],
+      hotel: ['Palm Bay Hotel', 'Seaview Suites', 'Old Town Inn', 'Harbour Hotel', 'Desert Rose Hotel', 'Marina Stay'], clinic: ['Care Plus Clinic', 'Bright Smile Dental', 'City Medical Centre', 'Family Clinic', 'Pearl Dental'], salon: ['Lumière Salon', 'Gold Scissors', 'Velvet Spa', 'Glam Studio'] };
+    const say = { restaurant: ['Delicious food and friendly staff', 'Service was slow tonight', 'الأكل لذيذ والخدمة سريعة', 'Too expensive for the portion', 'المكان نظيف والموظفين محترمين', 'Food arrived cold', 'Great value, will come again', 'الطاولة وسخة', 'Waiter was rude'],
+      other: ['Friendly staff, very clean', 'Waited too long', 'خدمة ممتازة', 'Prices are high', 'المكان غير نظيف', 'Quick and professional', 'Not worth the money'] };
+    const t = b.businessType || 'restaurant';
+    const list = (names[t] || names.salon).map((name, i) => ({
+      name, rating: Math.round((3.4 + rnd() * 1.5) * 10) / 10, count: 20 + Math.floor(rnd() * 900), distance: 150 + Math.floor(rnd() * (area.radius - 150)), url: '',
+      reviews: Array.from({ length: 5 }, () => { const text = pick(say[t] || say.other); return { rating: /slow|cold|rude|expensive|long|high|worth|وسخ|غير/i.test(text) ? 2 : 5, text }; }),
+    })).filter((p) => p.distance <= area.radius);
+    return { me: { name: label(b), rating: 4.2, count: 386 }, radius: area.radius, places: list };
+  }
 
   function csv() {
     const { cur } = periods();
